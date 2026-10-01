@@ -72,10 +72,11 @@ canvas#view{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;
     <div class="row">
       <button class="btn pri" id="bCam" type="button" disabled>Fotocamera dal vivo</button>
       <button class="btn" id="bFz" type="button" hidden>Blocca</button>
-      <button class="btn" id="bSw" type="button" hidden>Cambia camera</button>
+      <button class="btn" id="bSw" type="button" hidden>Prossima camera</button>
       <button class="btn pri" id="bGo" type="button" hidden>Nuova foto</button>
       <label class="btn" id="bFile" style="margin:0">Scegli foto<input id="file" type="file" accept="image/*" hidden></label>
     </div>
+    <select id="camSel" class="btn" style="flex:none;width:100%;height:46px;display:block" hidden aria-label="Scegli telecamera"></select>
     <div class="note" id="hint">Avvia la fotocamera e inquadra il tappeto: si aggancia da solo. Tocca un punto della carta per sapere che comune è.</div>
   </div>
 </div>
@@ -87,7 +88,7 @@ const CFG={nRef:40000,nPhoto:6000,maxDim:700};
 const KN={ZH:'Zurigo',BE:'Berna',LU:'Lucerna',UR:'Uri',SZ:'Svitto',OW:'Obvaldo',NW:'Nidvaldo',GL:'Glarona',ZG:'Zugo',FR:'Friburgo',SO:'Soletta',BS:'Basilea Città',BL:'Basilea Campagna',SH:'Sciaffusa',AR:'Appenzello Esterno',AI:'Appenzello Interno',SG:'San Gallo',GR:'Grigioni',AG:'Argovia',TG:'Turgovia',TI:'Ticino',VD:'Vaud',VS:'Vallese',NE:'Neuchâtel',GE:'Ginevra',JU:'Giura'};
 const GEO={cx:[1759.323222832368,895.8339284145278,0.016159342528644233],cy:[1252.2332498214953,0.0190945177211006,-897.0730979843017],E0:2660000,N0:1185000,div:100000};
 const $=id=>document.getElementById(id);
-const S={cv:null,ready:false,H:null,Hi:null,frame:null,sel:null,layers:{com:1,dist:0,cant:1,nomi:1},stream:null,busy:false,live:false,raw:document.createElement('canvas'),prevGray:null,lastT:0,lastRec:0,facing:'environment',pinM:null};
+const S={cv:null,ready:false,H:null,Hi:null,frame:null,sel:null,layers:{com:1,dist:0,cant:1,nomi:1},stream:null,busy:false,live:false,raw:document.createElement('canvas'),prevGray:null,lastT:0,lastRec:0,facing:'environment',pinM:null,devId:null,devs:[]};
 
 /* ---------- dati ---------- */
 const DB=JSON.parse($('chdata').textContent);
@@ -407,20 +408,42 @@ function liveTick(ts){
   draw();
 }
 function stopStream(){if(S.stream){S.stream.getTracks().forEach(t=>t.stop());S.stream=null}}
-async function startLive(){
+async function listCams(){
+  try{
+    const all=await navigator.mediaDevices.enumerateDevices();
+    S.devs=all.filter(d=>d.kind==='videoinput');
+    const sel=$('camSel');sel.innerHTML='';
+    S.devs.forEach((d,i)=>{const o=document.createElement('option');o.value=d.deviceId;o.textContent=(i+1)+'/'+S.devs.length+' · '+(d.label||('Telecamera '+(i+1)));sel.appendChild(o)});
+    const cur=S.stream&&S.stream.getVideoTracks()[0]&&S.stream.getVideoTracks()[0].getSettings().deviceId;
+    if(cur)sel.value=cur;
+    sel.hidden=S.devs.length<1;
+  }catch(e){}
+}
+async function startLive(devId){
   try{
     stopStream();
-    S.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:S.facing},width:{ideal:1280},height:{ideal:720}},audio:false});
+    const base={width:{ideal:1280},height:{ideal:720}};
+    const vc=devId?Object.assign({deviceId:{exact:devId}},base):Object.assign({facingMode:{ideal:S.facing}},base);
+    S.stream=await navigator.mediaDevices.getUserMedia({video:vc,audio:false});
+    S.devId=S.stream.getVideoTracks()[0].getSettings().deviceId||devId||null;
     const v=$('vid');v.srcObject=S.stream;await v.play();
     S.live=true;S.H=null;S.Hi=null;S.sel=null;S.pinM=null;if(S.prevGray){S.prevGray.delete();S.prevGray=null}
     $('view').hidden=false;$('info').hidden=true;$('bCam').hidden=true;$('bGo').hidden=true;$('bFz').hidden=false;$('bFz').textContent='Blocca';$('bSw').hidden=false;
-    setState('Cerco il tappeto…');$('sub').textContent='Inquadra il tappeto';$('hint').hidden=false;$('hint').textContent='Tieni il tablet sopra il tappeto: si aggancia da solo. Tocca un punto per sapere il comune. Con Blocca fermi l\'immagine.';
-    S.raf=requestAnimationFrame(liveTick);
-  }catch(e){setState('Fotocamera non disponibile','bad');$('hint').hidden=false;$('hint').textContent='Non posso usare la fotocamera ('+(e&&e.name||'errore')+'). Usa Scegli foto.'}
+    await listCams();
+    const lab=S.stream.getVideoTracks()[0].label||'';
+    setState('Cerco il tappeto…');$('sub').textContent='Inquadra il tappeto';$('hint').hidden=false;$('hint').textContent='Telecamera: '+(lab||'sconosciuta')+' ('+S.devs.length+' trovate). Se l\'immagine non è quella giusta, scegli un\'altra telecamera dall\'elenco. Tocca un punto per sapere il comune.';
+    cancelAnimationFrame(S.raf);S.raf=requestAnimationFrame(liveTick);
+  }catch(e){setState('Fotocamera non disponibile','bad');$('hint').hidden=false;$('hint').textContent='Non posso usare la telecamera ('+(e&&e.name||'errore')+'). Se hai scelto una telecamera, prova un\'altra dall\'elenco, oppure usa Scegli foto.';await listCams()}
 }
 function pauseLive(){S.live=false;cancelAnimationFrame(S.raf)}
-$('bCam').addEventListener('click',startLive);
-$('bSw').addEventListener('click',()=>{S.facing=S.facing==='environment'?'user':'environment';startLive()});
+$('bCam').addEventListener('click',()=>startLive());
+$('bSw').addEventListener('click',async()=>{
+  await listCams();
+  if(S.devs.length>1){const i=S.devs.findIndex(d=>d.deviceId===S.devId);startLive(S.devs[(i+1)%S.devs.length].deviceId)}
+  else{S.facing=S.facing==='environment'?'user':'environment';startLive()}
+});
+$('camSel').addEventListener('change',e=>startLive(e.target.value));
+if(navigator.mediaDevices&&navigator.mediaDevices.addEventListener)navigator.mediaDevices.addEventListener('devicechange',()=>{if(S.stream)listCams()});
 $('bFz').addEventListener('click',()=>{
   if(S.live){pauseLive();$('bFz').textContent='Riprendi';if(S.H)setState('Immagine bloccata','ok')}
   else{S.live=true;S.H=null;S.Hi=null;if(S.prevGray){S.prevGray.delete();S.prevGray=null}S.lastRec=0;$('bFz').textContent='Blocca';setState('Cerco il tappeto…');S.raf=requestAnimationFrame(liveTick)}
@@ -429,7 +452,7 @@ $('file').addEventListener('change',async e=>{
   const f=e.target.files&&e.target.files[0];if(!f||!S.ready)return;
   let bmp;try{bmp=await createImageBitmap(f,{imageOrientation:'from-image'})}catch(err){bmp=await createImageBitmap(f)}
   const c=grab(bmp,bmp.width,bmp.height);e.target.value='';
-  pauseLive();stopStream();$('bCam').hidden=false;$('bFz').hidden=true;$('bSw').hidden=true;
+  pauseLive();stopStream();$('bCam').hidden=false;$('bFz').hidden=true;$('bSw').hidden=true;$('camSel').hidden=true;
   $('view').hidden=false;S.frame=c;S.H=null;draw();analyze(c);
 });
 
