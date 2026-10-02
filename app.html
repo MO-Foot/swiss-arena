@@ -64,6 +64,16 @@ canvas#view{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .setup,.quiz,.learn{display:flex;flex-direction:column;gap:12px}
 .tiles{display:grid;gap:8px}
 .tile{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:10px 12px;min-height:60px;border:1.5px solid var(--ink);border-radius:4px;background:var(--paper);cursor:pointer;font-family:var(--font)}
+.tile:disabled{opacity:.5;cursor:not-allowed}
+.tile .st{font-size:12px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.03em}
+.qbox{padding:10px 12px;border:1.5px solid var(--red);border-radius:4px;font-size:17px;font-weight:600;line-height:1.35}
+.sw{display:inline-block;width:14px;height:14px;border:1px solid var(--ink);margin-right:6px;vertical-align:-2px}
+textarea#tQ{width:100%;min-height:60px;font:15px var(--font);border:1.5px solid var(--ink);border-radius:4px;padding:6px;box-sizing:border-box}
+#skTools{position:absolute;z-index:6;left:12px;top:calc(var(--safet) + 64px);display:flex;gap:8px;flex-wrap:wrap;max-width:calc(100% - 24px);background:var(--paper);border:1.5px solid var(--ink);border-radius:4px;padding:8px}
+#skTools[hidden]{display:none}
+.skc{width:36px;height:36px;border-radius:50%;border:2px solid var(--ink);cursor:pointer;padding:0}
+.skc[aria-pressed=true]{outline:3px solid var(--ink);outline-offset:2px}
+canvas#view.sk{touch-action:none;cursor:crosshair}
 .tile b{font-size:18px;font-weight:700}.tile span{font-size:14px;color:var(--ink-2)}
 .tile[aria-pressed=true]{background:var(--ink);color:#fff}.tile[aria-pressed=true] span{color:#DDE2E0}
 .qhead{display:flex;justify-content:space-between;font-size:14px;color:var(--ink-2);font-weight:600}
@@ -78,7 +88,7 @@ canvas#view{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .res b{font-size:32px;display:block}.res ul{margin:6px 0 0;padding-left:18px;font-size:15px}
 select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 15px var(--font);padding:0 8px;background:var(--paper);width:100%}
 /* moduli in basso */
-.tabs{position:absolute;z-index:5;left:50%;transform:translateX(-50%);bottom:calc(var(--safeb) + 12px);width:min(calc(100% - 24px),700px);display:grid;grid-template-columns:repeat(4,1fr);border:1.5px solid var(--ink);background:var(--paper);border-radius:4px;overflow:hidden}
+.tabs{position:absolute;z-index:5;left:50%;transform:translateX(-50%);bottom:calc(var(--safeb) + 12px);width:min(calc(100% - 24px),860px);display:grid;grid-template-columns:repeat(5,1fr);border:1.5px solid var(--ink);background:var(--paper);border-radius:4px;overflow:hidden}
 .tabs button{height:62px;border:0;background:var(--paper);font:700 clamp(14px,2.4vw,19px) var(--font);cursor:pointer;padding:0 4px}
 .tabs button+button{border-left:1.5px solid var(--ink)}
 .tabs button[aria-pressed=true]{background:var(--red);color:#fff}
@@ -136,6 +146,7 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
         <div id="catWrap" hidden><div class="lbl">Cosa</div><div class="chips" id="catChips"></div></div>
         <div class="lbl">Scegli un'attività</div><div class="tiles" id="modeChips"></div>
       </div>
+      <div class="learn" id="comp" hidden><div class="lbl" id="cLbl">Processi di apprendimento</div><div class="tiles" id="cProcs"></div><div id="cLayers" hidden><button class="btn" id="cBack" type="button">Tutti i processi</button><h2 id="cPName" style="margin-top:8px"></h2><div class="note" id="cPQ"></div><div class="tiles" id="cLList" style="margin-top:8px"></div></div><div class="qbox" id="cGuide" hidden></div></div>
       <div class="learn" id="learn" hidden><h2 id="lName"></h2><div class="sub" id="lSub"></div><div class="note" id="lNote"></div><div id="lLegend"></div><button class="btn" id="lBack" type="button" hidden>Altre attività</button><div id="rankBox" hidden><div class="chips" id="rkLv"></div><div class="chips" id="rkOrd" style="margin-top:6px"></div><div class="rklist" id="rkList" style="margin-top:8px"></div></div></div>
       <div class="quiz" id="quiz" hidden>
         <div class="qhead"><span id="qProg"></span><span id="qScore"></span></div>
@@ -150,7 +161,8 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
    </div>
   </div>
 
-  <nav class="tabs" id="mods"><button type="button" data-m="esplora" aria-pressed="true">Esplora</button><button type="button" data-m="cantoni" aria-pressed="false">Cantoni</button><button type="button" data-m="luoghi" aria-pressed="false">Luoghi</button><button type="button" data-m="popolazione" aria-pressed="false">Popolazione</button></nav>
+  <nav class="tabs" id="mods"><button type="button" data-m="esplora" aria-pressed="true">Esplora</button><button type="button" data-m="cantoni" aria-pressed="false">Cantoni</button><button type="button" data-m="luoghi" aria-pressed="false">Luoghi</button><button type="button" data-m="popolazione" aria-pressed="false">Popolazione</button><button type="button" data-m="competenze" aria-pressed="false">Competenze</button></nav>
+  <div id="skTools" hidden><span id="skLbl" style="align-self:center;font-weight:700">Schizzo</span><span id="skCols"></span><button class="btn" id="skW" type="button" style="flex:none;min-height:36px;width:90px">Spesso</button><button class="btn" id="skUndo" type="button" style="flex:none;min-height:36px;width:80px">Annulla</button><button class="btn" id="skClear" type="button" style="flex:none;min-height:36px;width:80px">Cancella</button><button class="btn" id="skSave" type="button" style="flex:none;min-height:36px;width:90px">Salva PNG</button><button class="btn pri" id="skEnd" type="button" style="flex:none;min-height:36px;width:80px">Fine</button></div>
 
   <div class="menu" id="menu" hidden>
     <div><h3>Fotocamera</h3></div>
@@ -169,6 +181,7 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
       <div id="tPanel" hidden style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
         <div class="lbl">Moduli visibili agli allievi</div><div class="tgrp" id="tMods"></div>
         <div class="lbl">Attività</div><div class="tgrp" id="tActs"></div>
+        <div class="lbl">Domanda guida (visibile in Competenze)</div><textarea id="tQ" maxlength="140" placeholder="Es.: Perché in Ticino i comuni sono così piccoli?"></textarea>
         <div class="lbl">Luoghi: cosa includere</div><div class="tgrp" id="tCats"></div>
         <div class="lbl">Esplora: livelli ammessi</div><div class="tgrp" id="tLay"></div>
         <button class="btn pri" id="tCopy" type="button">Crea link per gli allievi</button>
@@ -363,6 +376,7 @@ function draw(){
   const sc=Math.sqrt(Math.abs(H[0]*H[4]-H[1]*H[3]));
   ctx.lineJoin='round';
   if(S.mod==='popolazione')popFill(ctx,H,W,Hh,k);
+  if(S.mod==='competenze')compFill(ctx,H,W,Hh,k);
   const line=(list,cw,col,dash)=>{
     ctx.beginPath();for(const c of list){if(c.b&&!visible(c.b,H,W,Hh))continue;if(c.b&&cw<1.5&&Math.max(c.b[2]-c.b[0],c.b[3]-c.b[1])*sc<5)continue;polyPath(ctx,c.r,H)}
     ctx.setLineDash(dash||[]);ctx.strokeStyle='rgba(0,0,0,.55)';ctx.lineWidth=(cw+2.2)*k;ctx.stroke();
@@ -393,6 +407,7 @@ function draw(){
     }
   }
   if(S.mod!=='esplora')drawModule(ctx,H,W,Hh,k);
+  drawSketch(ctx,H,k);
   if(S.pinM&&(WEPS>0?1:-1)*wOf(H,S.pinM[0],S.pinM[1])>Math.abs(WEPS)){const[x,y]=applyH(H,S.pinM[0],S.pinM[1]),r=22*k;ctx.strokeStyle='#D52B1E';ctx.lineWidth=3*k;ctx.beginPath();ctx.moveTo(x-r,y);ctx.lineTo(x+r,y);ctx.moveTo(x,y-r);ctx.lineTo(x,y+r);ctx.stroke();ctx.beginPath();ctx.arc(x,y,r*.5,0,7);ctx.stroke()}
 }
 
@@ -413,7 +428,7 @@ function enterLocked(res,frame){
   draw();
 }
 $('view').addEventListener('click',e=>{
-  if(!S.H)return;const cv=$('view'),r=cv.getBoundingClientRect();
+  if(!S.H||S.sketch)return;const cv=$('view'),r=cv.getBoundingClientRect();
   const sc=Math.min(r.width/cv.width,r.height/cv.height);const ox=(r.width-cv.width*sc)/2,oy=(r.height-cv.height*sc)/2;
   const x=(e.clientX-r.left-ox)/sc,y=(e.clientY-r.top-oy)/sc;if(x<0||y<0||x>cv.width||y>cv.height)return;
   const m=applyH(S.Hi,x,y);if(S.mod!=='esplora'){modTap(m);return}const c=findCom(m[0],m[1]);
@@ -607,7 +622,7 @@ function aliasesOf(it){
 function cantName(k){return KN[DB.K[k]]||DB.K[k]}
 function capOf(k){return DB.poi.find(p=>p.cap&&p.k===k)}
 function typeWord(t){return {k:'cantone',c:'città',v:'cima',p:'passo',l:'lago'}[t]}
-function eff(){return S.mod==='esplora'?S.layers:{com:0,dist:(S.mod==='popolazione'&&S.popMap==='d')?1:0,cant:1,nomi:0}}
+function eff(){if(S.mod==='competenze')return S.cmpL||{com:0,dist:0,cant:1,nomi:0};return S.mod==='esplora'?S.layers:{com:0,dist:(S.mod==='popolazione'&&S.popMap==='d')?1:0,cant:1,nomi:0}}
 
 /* elenchi di elementi */
 function itemsFor(){
@@ -669,10 +684,12 @@ function drawModule(ctx,H,W,Hh,k){
 const MODES={cantoni:[['impara','Impara'],['localizza','Localizza'],['nomina','Nomina'],['capoluogo','Capoluogo']],luoghi:[['impara','Impara'],['localizza','Localizza'],['nomina','Nomina']]};
 const CATS=[['c','Città'],['v','Cime'],['p','Passi'],['l','Laghi']];
 function chipHTML(list,sel,attr){return list.map(([v,t])=>`<button class="chip" type="button" data-${attr}="${v}" aria-pressed="${sel(v)}">${t}</button>`).join('')}
-function resetModState(){$('lBack').hidden=true;S.hl2=null;S.popMap=null;S.hl=null;S.marks=[];S.pinM=null;S.sel=null;S.learnPois=null;S.qz=null;$('quiz').hidden=true;$('learn').hidden=true;$('info').hidden=true}
+function resetModState(){S.cmpFill=null;S.cmpL=null;$('lBack').hidden=true;S.hl2=null;S.popMap=null;S.hl=null;S.marks=[];S.pinM=null;S.sel=null;S.learnPois=null;S.qz=null;$('quiz').hidden=true;$('learn').hidden=true;$('info').hidden=true}
 const TILES={popolazione:[['mappa_c','Mappa dei cantoni','Colori in base agli abitanti'],['mappa_d','Mappa dei distretti','Colori in base agli abitanti'],['classifica','Classifica','I più e i meno popolati'],['piu','Chi ha più abitanti?','Confronta due cantoni'],['stima','Quanti abitanti?','Indovina la fascia di un cantone']],cantoni:[['impara','Impara','Tocca un cantone: vedi nome e capoluogo'],['localizza','Dove si trova?','Trova il cantone sul tappeto'],['nomina','Come si chiama?','Leggi il nome del cantone evidenziato'],['capoluogo','Capoluogo','Qual è il capoluogo di questo cantone?']],luoghi:[['impara','Impara','Tocca un punto e leggi le informazioni'],['localizza','Dove si trova?','Tocca il luogo sul tappeto'],['nomina','Come si chiama?','Riconosci il luogo evidenziato']]};
 function renderSetup(){
-  const m=S.mod;$('setup').hidden=m==='esplora';
+  const m=S.mod;$('comp').hidden=m!=='competenze'||!!S.qz||!!S.sketch;
+  if(m==='competenze'){$('setup').hidden=true;$('chipsWrap').hidden=true;return}
+  $('setup').hidden=m==='esplora';
   $('chipsWrap').hidden=!(m==='esplora'&&S.H);
   if(!S.teacher)$('ansChips').innerHTML=chipHTML([['scegli','Scegli tra 4 nomi'],['scrivi','Scrivi il nome']],v=>S.ans===v,'ans');
   if(m==='esplora')return;
@@ -681,10 +698,10 @@ function renderSetup(){
   if(S.mode==='impara'&&m==='luoghi')S.learnPois=DB.poi.filter(p=>S.cats[p.t]);else S.learnPois=null;
   if(S.H)draw();
 }
-$('mods').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.mod=b.dataset.m;S.mode=S.mod==='popolazione'?'':'impara';resetModState();
+$('mods').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.mod=b.dataset.m;S.mode=(S.mod==='popolazione'||S.mod==='competenze')?'':'impara';endSketch();resetModState();
   [...$('mods').children].forEach(x=>x.setAttribute('aria-pressed',x===b));
   $('hint').hidden=true;
-  if(S.mod==='esplora'){$('hint').hidden=false;$('hint').textContent='Tocca un punto della carta per sapere che comune è.'}else if(S.mod==='popolazione'){S.mode=''}
+  if(S.mod==='esplora'){$('hint').hidden=false;$('hint').textContent='Tocca un punto della carta per sapere che comune è.'}else if(S.mod==='popolazione'){S.mode=''}else if(S.mod==='competenze'){S.mode='';compHome()}
   else if(S.mod==='cantoni'){S.mode='impara'}
   renderSetup();if(S.H)draw();
 });
@@ -702,6 +719,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('.chip[data-ans]'
 /* ---------- modo Impara: tocco sul tappeto ---------- */
 function nearestPoi(mx,my,maxPx){let best=null,bd=maxPx;for(const p of DB.poi){if(p.t==='l'||!S.cats[p.t]&&S.mod==='luoghi')continue;const d=Math.hypot(p.x-mx,p.y-my);if(d<bd){bd=d;best=p}}return best}
 function modTap(m){
+  if(S.mod==='competenze'){if(S.sketch)return;if(S.qz&&!S.qz.over){quizTap(m);return}if(S.cmpFill)compTap(m);return}
   if(S.mod==='popolazione'){if(S.qz&&!S.qz.over)return;if(S.popMap)popInfo(m);return}
   if(S.qz&&!S.qz.over){quizTap(m);return}
   if(S.mode!=='impara'){draw();return}
@@ -970,15 +988,112 @@ function popAnswer(b,q){
 
 
 /* ================= VISTA DOCENTE / ALLIEVO ================= */
+
+/* ---------- modulo Competenze ---------- */
+const GR=[['Regione lemanica','VD VS GE','#2C7FB8'],['Espace Mittelland','BE FR SO NE JU','#E0A21B'],['Svizzera nordoccidentale','BS BL AG','#7B5EA7'],['Zurigo','ZH','#D52B1E'],['Svizzera orientale','GL SH AR AI SG GR TG','#2F7D32'],['Svizzera centrale','LU UR SZ OW NW ZG','#E6732E'],['Ticino','TI','#1CA9A0']];
+const SOPRA=['Leventina','Blenio','Riviera','Vallemaggia','Locarno','Bellinzona'],SOTTO=['Lugano','Mendrisio'];
+const COMP=[
+ ['Problematizzare','Formulare domande sul territorio',[['guida','Domanda guida','La domanda della lezione, scelta dal docente',1],['conf','Confronto Svizzera–Europa','Per la seconda media',0]]],
+ ['Suddividere','Dividere il territorio in parti',[['gr','Grandi regioni','Le 7 grandi regioni statistiche',1],['ts','Sopra e Sottoceneri','Le due parti del Ticino',1],['dist','Distretti','Mostra i distretti sulla carta',1],['com','Comuni','Mostra i comuni sulla carta',1]]],
+ ['Organizzare','Mettere in ordine e in relazione',[['cant','Cantoni','Impara e allenati sui 26 cantoni',1],['pop','Popolazione dei cantoni','Mappa con colori in base agli abitanti',1],['eco','Economia','Settori e lavoro',0]]],
+ ['Attribuire','Dare nomi e caratteristiche ai luoghi',[['idro','Laghi','Trova e riconosci i laghi',1],['trans','Passi alpini','Trova e riconosci i passi',1],['citta','Città e capoluoghi','Trova e riconosci le città',1],['cime','Cime','Trova e riconosci le cime',1]]],
+ ['Contestualizzare','Collegare fatti e luoghi',[['popd','Popolazione dei distretti','Mappa con colori in base agli abitanti',1],['clima','Clima','Temperature e precipitazioni',0]]],
+ ['Codificare','Rappresentare con segni e colori',[['schizzo','Schizzo sulla carta','Disegna sul tappeto e salva l\'immagine',1],['tem','Carta tematica','Colori in base agli abitanti',1]]]
+];
+function compHome(){S.cmp={p:null};S.cmpFill=null;S.cmpL=null;S.mode='';$('cGuide').hidden=true;compRender();draw&&S.H&&draw()}
+function compAllowed(id){
+  const mods={cant:'cantoni',idro:'luoghi',trans:'luoghi',citta:'luoghi',cime:'luoghi',pop:'popolazione',popd:'popolazione',tem:'popolazione'};
+  if(mods[id]&&!T.mods[mods[id]])return false;
+  if((id==='dist'||id==='com')&&(!T.mods.esplora||!T.lay[id]))return false;
+  return true;
+}
+function compRender(){
+  const c=S.cmp||(S.cmp={p:null});
+  $('cProcs').hidden=$('cLbl').hidden=c.p!==null;$('cLayers').hidden=c.p===null;
+  $('cProcs').innerHTML=COMP.map((p,i)=>`<button class="tile" type="button" data-p="${i}"><b>${i+1}. ${p[0]}</b><span>${p[1]}</span></button>`).join('');
+  if(c.p!==null){const p=COMP[c.p];$('cPName').textContent=p[0];$('cPQ').textContent=p[1];
+    $('cLList').innerHTML=p[2].map(([id,t,d,ok])=>{const al=ok&&compAllowed(id);return `<button class="tile" type="button" data-id="${id}" ${al?'':'disabled'}><b>${t}</b><span>${d}</span>${ok?(al?'':'<span class="st">Non attivo</span>'):'<span class="st">In programma</span>'}</button>`}).join('')}
+}
+function compTabTo(m){const b=[...$('mods').children].find(x=>x.dataset.m===m);if(b)b.click()}
+function compLaunch(id){
+  endSketch();
+  if(id==='guida'){S.cmpFill=null;$('cGuide').hidden=false;$('cGuide').textContent=T.q||'Il docente non ha ancora scritto una domanda guida. Guarda la carta: che cosa ti colpisce? Che domanda ti viene in mente?';return}
+  $('cGuide').hidden=true;
+  if(id==='gr'||id==='ts'){S.cmpFill=id;S.cmpL={com:0,dist:id==='ts'?1:0,cant:1,nomi:0};S.hl=null;S.marks=[];S.pinM=null;compInfo(id==='gr'?'Grandi regioni':'Sopra e Sottoceneri',id==='gr'?'Tocca una regione sulla carta.':'Tocca il Ticino: Sopraceneri o Sottoceneri?',true);draw();return}
+  if(id==='dist'||id==='com'){compTabTo('esplora');for(const l in S.layers)S.layers[l]=(l===id||l==='cant')?1:0;if(!T.lay.cant)S.layers.cant=0;[...$('chips').children].forEach(b=>b.setAttribute('aria-pressed',!!S.layers[b.dataset.l]));draw();return}
+  if(id==='cant'){compTabTo('cantoni');return}
+  if(id==='pop'||id==='tem'){compTabTo('popolazione');popStart('mappa_c');return}
+  if(id==='popd'){compTabTo('popolazione');popStart('mappa_d');return}
+  const cat={idro:'l',trans:'p',citta:'c',cime:'v'}[id];
+  if(cat){compTabTo('luoghi');for(const k in S.cats)S.cats[k]=k===cat?1:0;S.mode='impara';renderSetup();$('hint').hidden=false;$('hint').textContent='Tocca un punto segnato sul tappeto.';return}
+  if(id==='schizzo'){startSketch();return}
+}
+function compInfo(t,sub,leg){
+  $('cGuide').hidden=false;$('cGuide').innerHTML='<b>'+t+'</b><div class="note" style="font-weight:400" id="cNote">'+sub+'</div>'+(leg?compLegend():'');
+}
+function compLegend(){
+  if(S.cmpFill==='gr')return '<div style="margin-top:6px;font-weight:400">'+GR.map(g=>`<div><i class="sw" style="background:${g[2]}"></i>${g[0]}</div>`).join('')+'</div>';
+  return '<div style="margin-top:6px;font-weight:400"><div><i class="sw" style="background:#2C7FB8"></i>Sopraceneri</div><div><i class="sw" style="background:#E6732E"></i>Sottoceneri</div></div>';
+}
+function grOf(sig){return GR.find(g=>g[1].split(' ').includes(sig))}
+function compFill(ctx,H,W,Hh,k){
+  if(!S.cmpFill)return;
+  if(S.cmpFill==='gr'){
+    for(let kk=1;kk<=26;kk++){const g=grOf(DB.K[kk]);if(!g)continue;const o=DB.cant[kk-1];if(o.b&&!visible(o.b,H,W,Hh))continue;ctx.beginPath();polyPath(ctx,o.r,H);ctx.fillStyle=g[2]+'99';ctx.fill('evenodd')}
+  }else{
+    const ti=DB.K.indexOf('TI');
+    for(const o of DB.dist){if(o.k!==ti)continue;if(o.b&&!visible(o.b,H,W,Hh))continue;const col=SOPRA.includes(o.n)?'#2C7FB8':SOTTO.includes(o.n)?'#E6732E':null;if(!col)continue;ctx.beginPath();polyPath(ctx,o.r,H);ctx.fillStyle=col+'99';ctx.fill('evenodd')}
+  }
+}
+function compTap(m){
+  S.pinM=m;
+  if(S.cmpFill==='gr'){const c=findCant(m[0],m[1]);if(!c){compInfo('Grandi regioni','Tocca un punto dentro la Svizzera.',true)}else{const kk=DB.cant.indexOf(c)+1,g=grOf(DB.K[kk]);compInfo(g?g[0]:'—','Cantone '+cantName(kk)+' · la regione comprende: '+(g?g[1].split(' ').map(x=>KN[x]||x).join(', '):'—'),true)}}
+  else if(S.cmpFill==='ts'){const j=findDist(m[0],m[1]);const o=j>=0?DB.dist[j]:null;
+    if(!o||o.k!==DB.K.indexOf('TI'))compInfo('Sopra e Sottoceneri','Tocca una zona del Ticino.',true);
+    else compInfo(SOPRA.includes(o.n)?'Sopraceneri':'Sottoceneri','Distretto di '+o.n,true)}
+  draw();
+}
+$('cProcs').addEventListener('click',e=>{const b=e.target.closest('.tile');if(!b)return;S.cmp.p=+b.dataset.p;compRender()});
+$('cBack').addEventListener('click',()=>{S.cmpFill=null;S.cmpL=null;$('cGuide').hidden=true;endSketch();compHome();if(S.H)draw()});
+$('cLList').addEventListener('click',e=>{const b=e.target.closest('.tile');if(!b||b.disabled)return;compLaunch(b.dataset.id)});
+$('tQ').addEventListener('input',()=>{if(S.teacher){T.q=$('tQ').value.slice(0,140);saveCfg();$('tLink').hidden=true}});
+/* schizzo */
+const SKCOL=['#D52B1E','#0A7FC2','#2F7D32','#1D1F1E','#E0A21B'];
+S.strokes=[];S.skCol=SKCOL[0];S.skW=1;
+function startSketch(){
+  if(!S.H){return}
+  S.sketch=true;S.cmpFill=null;S.pinM=null;$('comp').hidden=true;$('skTools').hidden=false;$('view').classList.add('sk');
+  $('skCols').innerHTML=SKCOL.map(c=>`<button class="skc" type="button" data-c="${c}" style="background:${c}" aria-label="Colore" aria-pressed="${c===S.skCol}"></button>`).join(' ');
+}
+function endSketch(){if(!S.sketch)return;S.sketch=false;S.drawing=null;$('skTools').hidden=true;$('view').classList.remove('sk');if(S.mod==='competenze')compRender();renderSetup()}
+function drawSketch(ctx,H,k){
+  const all=S.drawing?S.strokes.concat([S.drawing]):S.strokes;
+  ctx.lineCap='round';ctx.lineJoin='round';
+  for(const st of all){ctx.beginPath();let open=false;for(const p of st.pts){const q=proj(H,p[0],p[1]);if(!q){open=false;continue}if(!open){ctx.moveTo(q[0],q[1]);open=true}else ctx.lineTo(q[0],q[1])}
+    if(st.pts.length===1){const q=proj(H,st.pts[0][0],st.pts[0][1]);if(q){ctx.beginPath();ctx.arc(q[0],q[1],st.w*2.5*k,0,7);ctx.fillStyle=st.c;ctx.fill()}continue}
+    ctx.strokeStyle=st.c;ctx.lineWidth=st.w*4*k;ctx.stroke()}
+}
+function evMap(e){const cv=$('view'),r=cv.getBoundingClientRect();const sc=Math.min(r.width/cv.width,r.height/cv.height);const ox=(r.width-cv.width*sc)/2,oy=(r.height-cv.height*sc)/2;const x=(e.clientX-r.left-ox)/sc,y=(e.clientY-r.top-oy)/sc;return S.Hi?applyH(S.Hi,x,y):null}
+$('view').addEventListener('pointerdown',e=>{if(!S.sketch||!S.H)return;const m=evMap(e);if(!m)return;e.preventDefault();try{$('view').setPointerCapture(e.pointerId)}catch(x){}S.drawing={c:S.skCol,w:S.skW,pts:[m]};draw()});
+$('view').addEventListener('pointermove',e=>{if(!S.sketch||!S.drawing)return;const m=evMap(e);if(m){S.drawing.pts.push(m);draw()}});
+const skUp=()=>{if(S.drawing){S.strokes.push(S.drawing);S.drawing=null;draw()}};
+$('view').addEventListener('pointerup',skUp);$('view').addEventListener('pointercancel',skUp);
+$('skCols').addEventListener('click',e=>{const b=e.target.closest('.skc');if(!b)return;S.skCol=b.dataset.c;[...$('skCols').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.c===S.skCol))});
+$('skW').addEventListener('click',()=>{S.skW=S.skW===1?2.5:1;$('skW').textContent=S.skW===1?'Spesso':'Sottile'});
+$('skUndo').addEventListener('click',()=>{S.strokes.pop();draw()});
+$('skClear').addEventListener('click',()=>{S.strokes=[];draw()});
+$('skEnd').addEventListener('click',endSketch);
+$('skSave').addEventListener('click',()=>{$('view').toBlob(b=>{if(!b)return;const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='schizzo-swiss-arena.png';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)},'image/png')});
+
 const ACT_LIST={cantoni:[['impara','Impara'],['localizza','Dove si trova?'],['nomina','Come si chiama?'],['capoluogo','Capoluogo']],luoghi:[['impara','Impara'],['localizza','Dove si trova?'],['nomina','Come si chiama?']],popolazione:[['mappa_c','Mappa dei cantoni'],['mappa_d','Mappa dei distretti'],['classifica','Classifica'],['piu','Chi ha più abitanti?'],['stima','Quanti abitanti?']]};
-const MOD_NAMES={esplora:'Esplora',cantoni:'Cantoni',luoghi:'Luoghi',popolazione:'Popolazione'};
+const MOD_NAMES={esplora:'Esplora',cantoni:'Cantoni',luoghi:'Luoghi',popolazione:'Popolazione',competenze:'Competenze'};
 const CAT_NAMES={c:'Città',v:'Cime',p:'Passi',l:'Laghi'};
 const LAY_NAMES={com:'Comuni',dist:'Distretti',cant:'Cantoni',nomi:'Nomi dei comuni'};
-function defCfg(){const a={};for(const m in ACT_LIST){a[m]={};ACT_LIST[m].forEach(x=>a[m][x[0]]=1)}return{mods:{esplora:1,cantoni:1,luoghi:1,popolazione:1},acts:a,cats:{c:1,v:1,p:1,l:1},lay:{com:1,dist:1,cant:1,nomi:1},n:10,ans:'scegli'}}
+function defCfg(){const a={};for(const m in ACT_LIST){a[m]={};ACT_LIST[m].forEach(x=>a[m][x[0]]=1)}return{mods:{esplora:1,cantoni:1,luoghi:1,popolazione:1,competenze:1},acts:a,cats:{c:1,v:1,p:1,l:1},lay:{com:1,dist:1,cant:1,nomi:1},n:10,ans:'scegli',q:''}}
 let T=defCfg();S.teacher=false;
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
-function mergeCfg(o){const d=defCfg();if(!o||typeof o!=='object')return d;for(const g of ['mods','cats','lay'])if(o[g])for(const k in d[g])if(k in o[g])d[g][k]=o[g][k]?1:0;if(o.acts)for(const m in d.acts)if(o.acts[m])for(const k in d.acts[m])if(k in o.acts[m])d.acts[m][k]=o.acts[m][k]?1:0;if([5,10,0].includes(o.n))d.n=o.n;if(o.ans==='scrivi'||o.ans==='scegli')d.ans=o.ans;return d}
+function mergeCfg(o){const d=defCfg();if(!o||typeof o!=='object')return d;for(const g of ['mods','cats','lay'])if(o[g])for(const k in d[g])if(k in o[g])d[g][k]=o[g][k]?1:0;if(o.acts)for(const m in d.acts)if(o.acts[m])for(const k in d.acts[m])if(k in o.acts[m])d.acts[m][k]=o.acts[m][k]?1:0;if([5,10,0].includes(o.n))d.n=o.n;if(o.ans==='scrivi'||o.ans==='scegli')d.ans=o.ans;if(typeof o.q==='string')d.q=o.q.slice(0,140);return d}
 function saveCfg(){lsSet('swissarena.cfg',JSON.stringify(T))}
 function pinHash(p){let h=2166136261;for(const ch of 'sa|'+p){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return String(h>>>0)}
 function encCfg(){return btoa(unescape(encodeURIComponent(JSON.stringify(T))))}
@@ -1004,7 +1119,7 @@ function applyCfg(){
   $('tOpen').hidden=!!S.lockedLink&&!S.teacher;$('tSect').hidden=!!S.lockedLink&&!S.teacher;
   renderSetup();if(S.H)draw();
 }
-function renderTeacherPanel(){
+function renderTeacherPanel(){$('tQ').value=T.q||'';
   const chk=(path,label,val)=>'<label class="chk"><input type="checkbox" data-p="'+path+'"'+(val?' checked':'')+'>'+label+'</label>';
   $('tMods').innerHTML=Object.keys(MOD_NAMES).map(m=>chk('mods.'+m,MOD_NAMES[m],T.mods[m])).join('');
   $('tActs').innerHTML=Object.keys(ACT_LIST).map(m=>'<div class="lbl" style="margin-top:6px">'+MOD_NAMES[m]+'</div>'+ACT_LIST[m].map(([k,n])=>chk('acts.'+m+'.'+k,n,T.acts[m][k])).join('')).join('');
@@ -1051,9 +1166,9 @@ let hintTimer=null;
 new MutationObserver(()=>{const h=$('hint');if(h.hidden){clearTimeout(hintTimer);return}clearTimeout(hintTimer);hintTimer=setTimeout(()=>{h.hidden=true},9000)}).observe($('hint'),{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['hidden']});
 function refreshUI(){
   $('start').hidden=!(S.ready&&!S.live&&!S.frame&&$('msg').hidden);
-  const vis=['info','chipsWrap','setup','learn','quiz'].some(id=>!$(id).hidden);
+  const vis=['info','chipsWrap','setup','learn','quiz','comp'].some(id=>!$(id).hidden);
   $('panel').hidden=!vis||(!S.ready);
-  $('cardTitle').textContent=!$('quiz').hidden?'Quiz':S.mod==='cantoni'?'Cantoni':S.mod==='luoghi'?'Luoghi':S.mod==='popolazione'?'Popolazione':'Esplora';
+  $('cardTitle').textContent=!$('quiz').hidden?'Quiz':S.mod==='cantoni'?'Cantoni':S.mod==='luoghi'?'Luoghi':S.mod==='popolazione'?'Popolazione':S.mod==='competenze'?'Competenze':'Esplora';
   $('bRe').hidden=!S.live;
   $('mCam').textContent=S.live?'Riavvia la fotocamera':'Avvia la fotocamera';
   const z=S.qz;if(z&&!z.over&&!z.answered&&!S.H){$('qNote').textContent=NOLOCK;$('qNote').hidden=false}
