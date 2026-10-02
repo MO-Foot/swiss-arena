@@ -15,7 +15,7 @@ button,select,input{font-family:inherit;color:inherit}
 canvas#view{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 #vid{position:absolute;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none}
 /* barra in alto */
-.top{position:absolute;left:0;right:0;top:0;padding:calc(var(--safet) + 10px) 12px 0;display:flex;gap:8px;align-items:flex-start;pointer-events:none;z-index:5}
+.top{position:absolute;left:0;right:0;top:0;padding:calc(var(--safet) + 10px) 12px 0;display:flex;gap:8px;align-items:flex-start;pointer-events:none;z-index:7}
 .top>*{pointer-events:auto}.top .sp{flex:1;pointer-events:none}
 .state{display:flex;align-items:center;gap:7px;height:44px;padding:0 12px;font-size:15px;font-weight:600;background:var(--paper);border:1.5px solid var(--ink);border-radius:4px;white-space:nowrap}
 .state i{width:10px;height:10px;border-radius:50%;background:var(--amber)}
@@ -92,6 +92,10 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
 .rk span{color:var(--ink-2);font-size:14px}.rk i{font-style:normal;font-weight:600;color:var(--ink-2);font-size:15px}
 .rk[aria-pressed=true]{background:var(--ink);color:#fff}.rk[aria-pressed=true] span,.rk[aria-pressed=true] i{color:#E3E8E6}
 .rklist{display:grid;gap:6px}
+.chk{display:flex;gap:10px;align-items:center;min-height:40px;font-size:16px;cursor:pointer}.chk input{width:22px;height:22px;flex:none;accent-color:var(--ink)}
+.tgrp{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--rule)}
+.tbadge{height:44px;padding:0 12px;display:flex;align-items:center;background:var(--amber);border:1.5px solid var(--ink);border-radius:4px;font:700 15px var(--font)}
+#tLink{width:100%;height:44px;padding:0 8px;font:14px var(--font);border:1.5px solid var(--ink);border-radius:4px}
 :focus-visible{outline:2px solid var(--lake);outline-offset:2px}
 </style></head>
 <body>
@@ -102,6 +106,7 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
   <div class="top">
     <div class="state" id="state"><i></i><span id="stateTx">Carico…</span></div><span id="sub"></span>
     <div class="sp"></div>
+    <span class="tbadge" id="roleBadge" hidden>Docente</span>
     <button class="fab" id="bRe" type="button" hidden>Riallinea</button>
     <button class="fab" id="bMenu" type="button" aria-pressed="false">Menu</button>
   </div>
@@ -153,11 +158,26 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
     <select id="camSel" class="sel" hidden aria-label="Scegli telecamera"></select>
     <div class="row"><button class="btn" id="mCam" type="button">Avvia la fotocamera</button><label class="btn" for="file">Scegli foto</label></div>
     <button class="btn" id="bGo" type="button" hidden>Chiudi la foto</button>
-    <div><h3>Quiz</h3></div>
-    <div class="lbl">Quante domande</div>
-    <select class="sel" id="nSel"><option value="5">5</option><option value="10" selected>10</option><option value="0">Tutte</option></select>
-    <div class="lbl">Come rispondere (Nomina e Capoluogo)</div>
-    <div class="chips" id="ansChips"></div>
+    <div id="quizSet" hidden><h3>Quiz</h3></div>
+    <div class="lbl" id="nLbl" hidden>Quante domande</div>
+    <select class="sel" id="nSel" hidden><option value="5">5</option><option value="10" selected>10</option><option value="0">Tutte</option></select>
+    <div class="lbl" id="ansLbl" hidden>Come rispondere (Nomina e Capoluogo)</div>
+    <div class="chips" id="ansChips" hidden></div>
+    <div id="tSect"><h3>Docente</h3>
+      <button class="btn" id="tOpen" type="button" style="margin-top:8px">Modalità docente</button>
+      <div id="tPin" hidden style="margin-top:8px"><div class="lbl" id="tPinLbl"></div><div class="ans"><input id="tPinIn" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="PIN"><button class="btn pri" id="tPinOk" type="button" style="flex:none;width:90px">OK</button></div><div class="note" id="tPinMsg"></div></div>
+      <div id="tPanel" hidden style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
+        <div class="lbl">Moduli visibili agli allievi</div><div class="tgrp" id="tMods"></div>
+        <div class="lbl">Attività</div><div class="tgrp" id="tActs"></div>
+        <div class="lbl">Luoghi: cosa includere</div><div class="tgrp" id="tCats"></div>
+        <div class="lbl">Esplora: livelli ammessi</div><div class="tgrp" id="tLay"></div>
+        <button class="btn pri" id="tCopy" type="button">Crea link per gli allievi</button>
+        <input id="tLink" type="text" readonly hidden aria-label="Link per gli allievi">
+        <div class="note" id="tCopyMsg"></div>
+        <button class="btn" id="tExit" type="button">Esci dalla modalità docente</button>
+        <div class="note">Le scelte valgono su questo tablet. Il link porta le stesse scelte sui tablet degli allievi. Se dimentichi il PIN, cancella i dati del sito dal browser.</div>
+      </div>
+    </div>
     <input id="file" type="file" accept="image/*" hidden>
   </div>
  </div>
@@ -654,10 +674,10 @@ const TILES={popolazione:[['mappa_c','Mappa dei cantoni','Colori in base agli ab
 function renderSetup(){
   const m=S.mod;$('setup').hidden=m==='esplora';
   $('chipsWrap').hidden=!(m==='esplora'&&S.H);
-  $('ansChips').innerHTML=chipHTML([['scegli','Scegli tra 4 nomi'],['scrivi','Scrivi il nome']],v=>S.ans===v,'ans');
+  if(!S.teacher)$('ansChips').innerHTML=chipHTML([['scegli','Scegli tra 4 nomi'],['scrivi','Scrivi il nome']],v=>S.ans===v,'ans');
   if(m==='esplora')return;
-  $('modeChips').innerHTML=TILES[m].map(([v,t,d])=>`<button class="tile" type="button" data-mode="${v}" aria-pressed="${S.mode===v&&(v==='impara'||(m==='popolazione'&&/^(mappa|class)/.test(v)))}"><b>${t}</b><span>${d}</span></button>`).join('');
-  $('catWrap').hidden=m!=='luoghi';$('lLegend').hidden=false;$('catChips').innerHTML=chipHTML(CATS,v=>!!S.cats[v],'cat');
+  $('modeChips').innerHTML=TILES[m].filter(([v])=>!T.acts[m]||T.acts[m][v]!==0).map(([v,t,d])=>`<button class="tile" type="button" data-mode="${v}" aria-pressed="${S.mode===v&&(v==='impara'||(m==='popolazione'&&/^(mappa|class)/.test(v)))}"><b>${t}</b><span>${d}</span></button>`).join('');
+  $('catWrap').hidden=m!=='luoghi';$('lLegend').hidden=false;$('catChips').innerHTML=chipHTML(CATS.filter(([v])=>T.cats[v]),v=>!!S.cats[v],'cat');
   if(S.mode==='impara'&&m==='luoghi')S.learnPois=DB.poi.filter(p=>S.cats[p.t]);else S.learnPois=null;
   if(S.H)draw();
 }
@@ -948,6 +968,78 @@ function popAnswer(b,q){
   $('qNext').hidden=false;$('qNext').textContent=z.i+1>=z.qs.length?'Vedi il risultato':'Avanti';draw();
 }
 
+
+/* ================= VISTA DOCENTE / ALLIEVO ================= */
+const ACT_LIST={cantoni:[['impara','Impara'],['localizza','Dove si trova?'],['nomina','Come si chiama?'],['capoluogo','Capoluogo']],luoghi:[['impara','Impara'],['localizza','Dove si trova?'],['nomina','Come si chiama?']],popolazione:[['mappa_c','Mappa dei cantoni'],['mappa_d','Mappa dei distretti'],['classifica','Classifica'],['piu','Chi ha più abitanti?'],['stima','Quanti abitanti?']]};
+const MOD_NAMES={esplora:'Esplora',cantoni:'Cantoni',luoghi:'Luoghi',popolazione:'Popolazione'};
+const CAT_NAMES={c:'Città',v:'Cime',p:'Passi',l:'Laghi'};
+const LAY_NAMES={com:'Comuni',dist:'Distretti',cant:'Cantoni',nomi:'Nomi dei comuni'};
+function defCfg(){const a={};for(const m in ACT_LIST){a[m]={};ACT_LIST[m].forEach(x=>a[m][x[0]]=1)}return{mods:{esplora:1,cantoni:1,luoghi:1,popolazione:1},acts:a,cats:{c:1,v:1,p:1,l:1},lay:{com:1,dist:1,cant:1,nomi:1},n:10,ans:'scegli'}}
+let T=defCfg();S.teacher=false;
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function mergeCfg(o){const d=defCfg();if(!o||typeof o!=='object')return d;for(const g of ['mods','cats','lay'])if(o[g])for(const k in d[g])if(k in o[g])d[g][k]=o[g][k]?1:0;if(o.acts)for(const m in d.acts)if(o.acts[m])for(const k in d.acts[m])if(k in o.acts[m])d.acts[m][k]=o.acts[m][k]?1:0;if([5,10,0].includes(o.n))d.n=o.n;if(o.ans==='scrivi'||o.ans==='scegli')d.ans=o.ans;return d}
+function saveCfg(){lsSet('swissarena.cfg',JSON.stringify(T))}
+function pinHash(p){let h=2166136261;for(const ch of 'sa|'+p){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return String(h>>>0)}
+function encCfg(){return btoa(unescape(encodeURIComponent(JSON.stringify(T))))}
+function loadCfg(){
+  let fromLink=false,docHash=false;
+  try{const h=location.hash||'';docHash=/docente/.test(h);const m=h.match(/c=([^&]+)/);if(m){T=mergeCfg(JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1]))))));fromLink=true;saveCfg()}}catch(e){}
+  if(!fromLink){const j=lsGet('swissarena.cfg');if(j){try{T=mergeCfg(JSON.parse(j))}catch(e){}}}
+  S.lockedLink=fromLink&&!docHash;
+}
+function enabledMods(){return Object.keys(MOD_NAMES).filter(m=>T.mods[m])}
+function applyCfg(){
+  [...$('mods').children].forEach(b=>{b.hidden=!T.mods[b.dataset.m]});
+  $('mods').style.gridTemplateColumns='repeat('+Math.max(1,enabledMods().length)+',1fr)';
+  $('mods').hidden=enabledMods().length<2&&!S.teacher;
+  if(!T.mods[S.mod]){const f=enabledMods()[0]||'esplora';const b=[...$('mods').children].find(x=>x.dataset.m===f);if(b)b.click()}
+  for(const c in T.cats){if(!T.cats[c])S.cats[c]=0}
+  if(!Object.values(S.cats).some(Boolean)){const f=Object.keys(T.cats).find(c=>T.cats[c]);if(f)S.cats[f]=1}
+  for(const l in T.lay){if(!T.lay[l])S.layers[l]=0}
+  [...$('chips').children].forEach(b=>{b.hidden=!T.lay[b.dataset.l];b.setAttribute('aria-pressed',!!S.layers[b.dataset.l])});
+  if(!S.teacher){$('nSel').value=String(T.n);S.ans=T.ans}
+  $('quizSet').hidden=$('nLbl').hidden=$('nSel').hidden=$('ansLbl').hidden=$('ansChips').hidden=!S.teacher;
+  $('roleBadge').hidden=!S.teacher;
+  $('tOpen').hidden=!!S.lockedLink&&!S.teacher;$('tSect').hidden=!!S.lockedLink&&!S.teacher;
+  renderSetup();if(S.H)draw();
+}
+function renderTeacherPanel(){
+  const chk=(path,label,val)=>'<label class="chk"><input type="checkbox" data-p="'+path+'"'+(val?' checked':'')+'>'+label+'</label>';
+  $('tMods').innerHTML=Object.keys(MOD_NAMES).map(m=>chk('mods.'+m,MOD_NAMES[m],T.mods[m])).join('');
+  $('tActs').innerHTML=Object.keys(ACT_LIST).map(m=>'<div class="lbl" style="margin-top:6px">'+MOD_NAMES[m]+'</div>'+ACT_LIST[m].map(([k,n])=>chk('acts.'+m+'.'+k,n,T.acts[m][k])).join('')).join('');
+  $('tCats').innerHTML=Object.keys(CAT_NAMES).map(c=>chk('cats.'+c,CAT_NAMES[c],T.cats[c])).join('');
+  $('tLay').innerHTML=Object.keys(LAY_NAMES).map(l=>chk('lay.'+l,LAY_NAMES[l],T.lay[l])).join('');
+  $('nSel').value=String(T.n);
+  $('ansChips').innerHTML=chipHTML([['scegli','Scegli tra 4 nomi'],['scrivi','Scrivi il nome']],v=>T.ans===v,'ans');
+}
+$('tPanel').addEventListener('change',e=>{const c=e.target.closest('input[data-p]');if(!c)return;const p=c.dataset.p.split('.');let o=T;for(let i=0;i<p.length-1;i++)o=o[p[i]];o[p[p.length-1]]=c.checked?1:0;
+  /* almeno un modulo e un'attività per modulo */
+  if(!enabledMods().length){T.mods.esplora=1;renderTeacherPanel()}
+  saveCfg();$('tLink').hidden=true;$('tCopyMsg').textContent='';applyCfg()});
+$('nSel').addEventListener('change',()=>{if(S.teacher){T.n=+$('nSel').value;saveCfg()}});
+document.addEventListener('click',e=>{const b=e.target.closest('.chip[data-ans]');if(b&&S.teacher){T.ans=b.dataset.ans;saveCfg();renderTeacherPanel()}},true);
+function openTeacher(){S.teacher=true;$('tPin').hidden=true;$('tPanel').hidden=false;$('tOpen').hidden=true;renderTeacherPanel();applyCfg()}
+$('tOpen').addEventListener('click',()=>{
+  if(S.teacher)return;const has=lsGet('swissarena.pin');$('tPin').hidden=false;$('tPinIn').value='';$('tPinMsg').textContent='';
+  $('tPinLbl').textContent=has?'Inserisci il PIN docente':'Scegli un PIN di 4–8 cifre per proteggere la modalità docente';$('tPinIn').focus();
+});
+function tryPin(){
+  const v=$('tPinIn').value.trim(),has=lsGet('swissarena.pin');
+  if(!/^\d{4,8}$/.test(v)){$('tPinMsg').textContent='Il PIN deve avere da 4 a 8 cifre.';return}
+  if(!has){lsSet('swissarena.pin',pinHash(v));openTeacher();return}
+  if(pinHash(v)===has)openTeacher();else{$('tPinMsg').textContent='PIN errato.';$('tPinIn').value=''}
+}
+$('tPinOk').addEventListener('click',tryPin);$('tPinIn').addEventListener('keydown',e=>{if(e.key==='Enter')tryPin()});
+$('tExit').addEventListener('click',()=>{S.teacher=false;$('tPanel').hidden=true;$('tOpen').hidden=false;$('tLink').hidden=true;applyCfg()});
+$('tCopy').addEventListener('click',async()=>{
+  const url=location.origin+location.pathname+'#c='+encodeURIComponent(encCfg());
+  const li=$('tLink');li.value=url;li.hidden=false;li.select();
+  let ok=false;try{await navigator.clipboard.writeText(url);ok=true}catch(e){try{ok=document.execCommand('copy')}catch(e2){}}
+  $('tCopyMsg').textContent=ok?'Link copiato. Aprilo sui tablet degli allievi: troveranno solo quello che hai scelto.':'Copia il link qui sopra (tienilo premuto) e aprilo sui tablet degli allievi.';
+});
+loadCfg();
+
 /* ---------- colla dell'interfaccia ---------- */
 $('bMenu').addEventListener('click',()=>{const h=$('menu').hidden;$('menu').hidden=!h;$('bMenu').setAttribute('aria-pressed',h)});
 $('stage').addEventListener('pointerdown',e=>{if(!$('menu').hidden&&!e.target.closest('#menu')&&!e.target.closest('#bMenu')){$('menu').hidden=true;$('bMenu').setAttribute('aria-pressed',false)}});
@@ -972,7 +1064,7 @@ setInterval(refreshUI,250);
 (async()=>{
   try{
     await bootCv();
-    S.ready=true;msg('','',false);setState('Pronto','ok');
+    S.ready=true;msg('','',false);setState('Pronto','ok');applyCfg();
     if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)$('bCam').disabled=false;else $('bCam').hidden=true;
   }catch(e){msg('Non parte',String(e.message||e));setState('Errore','bad')}
 })();
