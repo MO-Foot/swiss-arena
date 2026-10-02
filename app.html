@@ -12,7 +12,9 @@ html,body{height:100%;margin:0;background:#101211;color:var(--ink);font-family:v
 button,select,input{font-family:inherit;color:inherit}
 #app{position:fixed;inset:0}
 .stage{position:absolute;inset:0;background:#101211;overflow:hidden;touch-action:manipulation}
-canvas#view{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+canvas#view{position:absolute;left:0;top:0;transform-origin:0 0;touch-action:none}
+#zoomCtl{position:absolute;z-index:5;left:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px}
+#zoomCtl button{width:48px;height:48px;border:1.5px solid var(--ink);border-radius:4px;background:var(--paper);font:700 20px var(--font);cursor:pointer;padding:0}
 #vid{position:absolute;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none}
 /* barra in alto */
 .top{position:absolute;left:0;right:0;top:0;padding:calc(var(--safet) + 10px) 12px 0;display:flex;gap:8px;align-items:flex-start;pointer-events:none;z-index:7}
@@ -113,6 +115,7 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
  <div class="stage" id="stage">
   <video id="vid" playsinline muted autoplay></video>
   <canvas id="view" hidden></canvas>
+  <div id="zoomCtl" hidden><button type="button" id="zIn" aria-label="Ingrandisci">+</button><button type="button" id="zOut" aria-label="Allontana">−</button><button type="button" id="zReset" aria-label="Zoom iniziale" style="font-size:14px">1×</button></div>
   <div class="top">
     <div class="state" id="state"><i></i><span id="stateTx">Carico…</span></div><span id="sub"></span>
     <div class="sp"></div>
@@ -370,9 +373,11 @@ function visible(b,H,W,Hh){
   const pts=cs.map(p=>applyH(H,p[0],p[1]));let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const p of pts){x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);y0=Math.min(y0,p[1]);y1=Math.max(y1,p[1])}return !(x1<0||y1<0||x0>W||y0>Hh)}
 function draw(){
   const cv=$('view'),ctx=cv.getContext('2d'),f=S.frame;if(!f)return;
-  if(cv.width!==f.width||cv.height!==f.height){cv.width=f.width;cv.height=f.height}ctx.drawImage(f,0,0);
+  const mf=S.vz<0.98?0.4:0,mx=Math.round(f.width*mf),my=Math.round(f.height*mf),cw=f.width+2*mx,ch=f.height+2*my;S.mx=mx;S.my=my;
+  if(cv.width!==cw||cv.height!==ch){cv.width=cw;cv.height=ch;layoutView()}
+  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#101211';ctx.fillRect(0,0,cw,ch);ctx.drawImage(f,mx,my);
   if(!S.H)return;
-  const H=S.H,W=cv.width,Hh=cv.height,k=Math.max(W,Hh)/1000,L=eff();setEps(H,S.cx||0,S.cy||0);
+  const H=mul3([1,0,mx,0,1,my,0,0,1],S.H),W=cw,Hh=ch,k=Math.max(f.width,f.height)/1000,L=eff();setEps(H,S.cx||0,S.cy||0);
   const sc=Math.sqrt(Math.abs(H[0]*H[4]-H[1]*H[3]));
   ctx.lineJoin='round';
   if(S.mod==='popolazione')popFill(ctx,H,W,Hh,k);
@@ -427,10 +432,41 @@ function enterLocked(res,frame){
   $('bGo').hidden=false;$('bGo').textContent=S.stream?'Riprendi':'Nuova foto';$('bGo').dataset.mode='again';
   draw();
 }
+/* ---------- zoom e spostamento della vista ---------- */
+S.vz=1;S.vx=0;S.vy=0;S.mx=0;S.my=0;
+const PTR=new Map();let pinch=null,dragAcc=0;
+function layoutView(){
+  const cv=$('view'),f=S.frame;if(!f)return;const par=cv.parentElement,vw=par.clientWidth,vh=par.clientHeight;
+  const bs=Math.min(vw/f.width,vh/f.height),b=bs*S.vz;
+  S.vx=Math.max(-vw/2,Math.min(vw/2,S.vx));S.vy=Math.max(-vh/2,Math.min(vh/2,S.vy));
+  const left=vw/2+S.vx-(S.mx+f.width/2)*b,top=vh/2+S.vy-(S.my+f.height/2)*b;
+  cv.style.width=cv.width+'px';cv.style.height=cv.height+'px';cv.style.transform='translate('+left+'px,'+top+'px) scale('+b+')';
+}
+function zoomAt(nz,cx,cy){
+  const par=$('view').parentElement,r=par.getBoundingClientRect(),px=cx-r.left-r.width/2,py=cy-r.top-r.height/2;
+  nz=Math.max(0.55,Math.min(5,nz));const q=nz/S.vz;S.vx=px-(px-S.vx)*q;S.vy=py-(py-S.vy)*q;S.vz=nz;layoutView();if(S.frame)draw();
+}
+function zoomCenter(f){const r=$('view').parentElement.getBoundingClientRect();zoomAt(S.vz*f,r.left+r.width/2,r.top+r.height/2)}
+$('zIn').onclick=()=>zoomCenter(1.4);$('zOut').onclick=()=>zoomCenter(1/1.4);$('zReset').onclick=()=>{S.vz=1;S.vx=0;S.vy=0;layoutView();if(S.frame)draw()};
+window.addEventListener('resize',layoutView);
+$('view').addEventListener('wheel',e=>{if(!S.frame)return;e.preventDefault();zoomAt(S.vz*Math.exp(-e.deltaY*0.0015),e.clientX,e.clientY)},{passive:false});
+$('view').addEventListener('pointerdown',e=>{
+  PTR.set(e.pointerId,{x:e.clientX,y:e.clientY});if(PTR.size===1){dragAcc=0;S.noClick=false}
+  if(PTR.size===2){S.drawing=null;const [a,b]=[...PTR.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,z:S.vz};S.noClick=true}
+});
+$('view').addEventListener('pointermove',e=>{
+  const p=PTR.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
+  if(PTR.size>=2&&pinch){const [a,b]=[...PTR.values()];const d=Math.hypot(a.x-b.x,a.y-b.y)||1;const cx=(a.x+b.x)/2,cy=(a.y+b.y)/2;
+    const mdx=dx/2,mdy=dy/2;S.vx+=mdx;S.vy+=mdy;zoomAt(pinch.z*d/pinch.d,cx,cy);return}
+  if(PTR.size===1&&!S.sketch){dragAcc+=Math.abs(dx)+Math.abs(dy);if(dragAcc>10){S.noClick=true;S.vx+=dx;S.vy+=dy;layoutView()}}
+});
+const ptrEnd=e=>{PTR.delete(e.pointerId);if(PTR.size<2)pinch=null};
+$('view').addEventListener('pointerup',ptrEnd);$('view').addEventListener('pointercancel',ptrEnd);
+$('view').addEventListener('click',e=>{if(S.noClick){e.stopImmediatePropagation();S.noClick=false}},true);
 $('view').addEventListener('click',e=>{
   if(!S.H||S.sketch)return;const cv=$('view'),r=cv.getBoundingClientRect();
-  const sc=Math.min(r.width/cv.width,r.height/cv.height);const ox=(r.width-cv.width*sc)/2,oy=(r.height-cv.height*sc)/2;
-  const x=(e.clientX-r.left-ox)/sc,y=(e.clientY-r.top-oy)/sc;if(x<0||y<0||x>cv.width||y>cv.height)return;
+  const sc=r.width/cv.width;
+  const x=(e.clientX-r.left)/sc-S.mx,y=(e.clientY-r.top)/sc-S.my;
   const m=applyH(S.Hi,x,y);if(S.mod!=='esplora'){modTap(m);return}const c=findCom(m[0],m[1]);
   S.pinM=m;S.sel=c;if(c)showInfo(c,m);else{const lk=findLake(m[0],m[1]);$('info').hidden=false;$('hint').hidden=true;$('iName').textContent=lk?lk.n:'Fuori dalla Svizzera';$('iSub').textContent=lk?'Lago':'Punto fuori dai confini nazionali';['iK','iD','iN'].forEach(i=>$(i).textContent='—');const l=toLV95(m[0],m[1]);$('iC').textContent='Coordinate LV95: '+fmtK(l[0])+' · '+fmtK(l[1])+' (km, approssimate)'}
   draw();
@@ -499,7 +535,11 @@ function trackStep(){
         const A=cv.matFromArray(n,1,cv.CV_32FC2,a),B=cv.matFromArray(n,1,cv.CV_32FC2,b),mk=new cv.Mat(),Hm=cv.findHomography(A,B,cv.RANSAC,3,mk);
         let inl=0;for(let i=0;i<mk.rows;i++)inl+=mk.data[i];
         if(!Hm.empty()&&inl>=12){
-          const h=Array.from(Hm.data64F),det=h[0]*h[4]-h[1]*h[3];
+          let hh=Hm;
+          try{const ia=[],ib=[];for(let i=0;i<n;i++)if(mk.data[i]){ia.push(a[2*i],a[2*i+1]);ib.push(b[2*i],b[2*i+1])}
+            const Ai=cv.matFromArray(ia.length/2,1,cv.CV_32FC2,ia),Bi=cv.matFromArray(ib.length/2,1,cv.CV_32FC2,ib),Hl=cv.findHomography(Ai,Bi,0);Ai.delete();Bi.delete();
+            Hl.delete()}catch(e2){}
+          const h=Array.from(hh.data64F);if(hh!==Hm)hh.delete();const det=h[0]*h[4]-h[1]*h[3];
           if(det>0&&Math.abs(h[6]/h[8])<0.01&&Math.abs(h[7]/h[8])<0.01){
             ok=h.map(v=>v/h[8]);S.tp=keep.filter((_,i)=>mk.data[i]);
           }
@@ -524,7 +564,7 @@ function easeH(Hd,Ht,w,h,t){
   const cv=S.cv,c=[0,0,w,0,w,h,0,h],Ia=inv3(Hd),Ib=inv3(Ht),m=[],mx=[];
   let maxd=0;
   for(let i=0;i<4;i++){const A=applyH(Ia,c[2*i],c[2*i+1]),B=applyH(Ib,c[2*i],c[2*i+1]);if(!isFinite(A[0])||!isFinite(B[0]))return Ht;m.push(A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t);const p=applyH(Hd,B[0],B[1]);maxd=Math.max(maxd,Math.hypot(p[0]-c[2*i],p[1]-c[2*i+1]))}
-  if(maxd<0.6)return Ht;if(maxd>0.15*Math.hypot(w,h))return Ht;
+  if(maxd<0.8)return Hd;if(maxd>0.15*Math.hypot(w,h))return Ht;
   const A=cv.matFromArray(4,1,cv.CV_32FC2,m),B=cv.matFromArray(4,1,cv.CV_32FC2,c),M=cv.getPerspectiveTransform(A,B);
   const r=Array.from(M.data64F);A.delete();B.delete();M.delete();const z=r[8];return r.map(v=>v/z);
 }
@@ -539,7 +579,7 @@ function liveTick(ts){
   if(S.Ht){
     if(Hn){S.Ht=Hn;S.miss=0}
     else{S.miss++;seedPoints(S.Ht,false);if(S.miss===1)setState('Ricalibro…')}
-    const need=S.forceRec||(S.miss>0&&S.miss%6===1)||ts-S.lastRec>12000||(S.tp&&S.tp.length<25);
+    const need=S.forceRec||(S.miss>0&&S.miss%6===1)||ts-S.lastRec>30000||(S.tp&&S.tp.length<25);
     if(need){
       S.lastRec=ts;const forced=S.forceRec;S.forceRec=false;
       const r=recognize(S.raw);
@@ -569,10 +609,11 @@ async function listCams(){
 async function startLive(devId){
   try{
     stopStream();
-    const base={width:{ideal:1280},height:{ideal:720}};
+    const base={width:{ideal:1280},height:{ideal:960}};
     const vc=devId?Object.assign({deviceId:{exact:devId}},base):Object.assign({facingMode:{ideal:S.facing}},base);
     S.stream=await navigator.mediaDevices.getUserMedia({video:vc,audio:false});
     S.devId=S.stream.getVideoTracks()[0].getSettings().deviceId||devId||null;
+    try{const tr=S.stream.getVideoTracks()[0],cap=tr.getCapabilities&&tr.getCapabilities();if(cap&&cap.zoom&&cap.zoom.min!=null)await tr.applyConstraints({advanced:[{zoom:cap.zoom.min}]})}catch(e){}
     const v=$('vid');v.srcObject=S.stream;await v.play();
     S.live=true;S.H=null;S.Hi=null;S.Ht=null;S.tp=null;S.sel=null;S.pinM=null;if(S.prevGray){S.prevGray.delete();S.prevGray=null}
     $('view').hidden=false;$('info').hidden=true;$('bGo').hidden=true;$('bFz').hidden=false;$('bFz').textContent='Blocca';$('bSw').hidden=false;$('bRe').hidden=false;
@@ -1073,9 +1114,9 @@ function drawSketch(ctx,H,k){
     if(st.pts.length===1){const q=proj(H,st.pts[0][0],st.pts[0][1]);if(q){ctx.beginPath();ctx.arc(q[0],q[1],st.w*2.5*k,0,7);ctx.fillStyle=st.c;ctx.fill()}continue}
     ctx.strokeStyle=st.c;ctx.lineWidth=st.w*4*k;ctx.stroke()}
 }
-function evMap(e){const cv=$('view'),r=cv.getBoundingClientRect();const sc=Math.min(r.width/cv.width,r.height/cv.height);const ox=(r.width-cv.width*sc)/2,oy=(r.height-cv.height*sc)/2;const x=(e.clientX-r.left-ox)/sc,y=(e.clientY-r.top-oy)/sc;return S.Hi?applyH(S.Hi,x,y):null}
-$('view').addEventListener('pointerdown',e=>{if(!S.sketch||!S.H)return;const m=evMap(e);if(!m)return;e.preventDefault();try{$('view').setPointerCapture(e.pointerId)}catch(x){}S.drawing={c:S.skCol,w:S.skW,pts:[m]};draw()});
-$('view').addEventListener('pointermove',e=>{if(!S.sketch||!S.drawing)return;const m=evMap(e);if(m){S.drawing.pts.push(m);draw()}});
+function evMap(e){const cv=$('view'),r=cv.getBoundingClientRect();const sc=r.width/cv.width;const x=(e.clientX-r.left)/sc-S.mx,y=(e.clientY-r.top)/sc-S.my;return S.Hi?applyH(S.Hi,x,y):null}
+$('view').addEventListener('pointerdown',e=>{if(!S.sketch||!S.H||PTR.size>1)return;const m=evMap(e);if(!m)return;e.preventDefault();try{$('view').setPointerCapture(e.pointerId)}catch(x){}S.drawing={c:S.skCol,w:S.skW,pts:[m]};draw()});
+$('view').addEventListener('pointermove',e=>{if(!S.sketch||!S.drawing||PTR.size>1)return;const m=evMap(e);if(m){S.drawing.pts.push(m);draw()}});
 const skUp=()=>{if(S.drawing){S.strokes.push(S.drawing);S.drawing=null;draw()}};
 $('view').addEventListener('pointerup',skUp);$('view').addEventListener('pointercancel',skUp);
 $('skCols').addEventListener('click',e=>{const b=e.target.closest('.skc');if(!b)return;S.skCol=b.dataset.c;[...$('skCols').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.c===S.skCol))});
@@ -1169,7 +1210,7 @@ function refreshUI(){
   const vis=['info','chipsWrap','setup','learn','quiz','comp'].some(id=>!$(id).hidden);
   $('panel').hidden=!vis||(!S.ready);
   $('cardTitle').textContent=!$('quiz').hidden?'Quiz':S.mod==='cantoni'?'Cantoni':S.mod==='luoghi'?'Luoghi':S.mod==='popolazione'?'Popolazione':S.mod==='competenze'?'Competenze':'Esplora';
-  $('bRe').hidden=!S.live;
+  $('bRe').hidden=!S.live;$('zoomCtl').hidden=$('view').hidden||!S.frame;
   $('mCam').textContent=S.live?'Riavvia la fotocamera':'Avvia la fotocamera';
   const z=S.qz;if(z&&!z.over&&!z.answered&&!S.H){$('qNote').textContent=NOLOCK;$('qNote').hidden=false}
   else if(z&&$('qNote').textContent===NOLOCK&&S.H){$('qNote').hidden=true}
