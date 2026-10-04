@@ -5,7 +5,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Signika:wght@400;500;600;700&display=swap">
 <style>
-:root{--paper:#fff;--page:#EEF1F2;--ink:#1D1F1E;--ink-2:#4A504E;--rule:#C9CFCD;--lake:#0A7FC2;--forest:#2F7D32;--red:#D52B1E;--amber:#E0A21B;--font:'Signika','Segoe UI',system-ui,sans-serif;--safeb:env(safe-area-inset-bottom,0px);--safet:env(safe-area-inset-top,0px)}
+:root{--paper:#fff;--page:#EEF1F2;--ink:#1D1F1E;--ink-2:#4A504E;--rule:#C9CFCD;--lake:#0A7FC2;--forest:#2F7D32;--red:#D52B1E;--amber:#E0A21B;--font:'Signika','Segoe UI',system-ui,sans-serif;--safeb:env(safe-area-inset-bottom,0px);--safet:env(safe-area-inset-top,0px);--dockH:62px}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:#101211;color:var(--ink);font-family:var(--font);-webkit-text-size-adjust:100%;overflow:hidden}
 [hidden]{display:none!important}
@@ -92,13 +92,13 @@ canvas#view{position:absolute;left:0;top:0;transform-origin:0 0;touch-action:non
 /* pannello */
 .panel{position:absolute;z-index:4;display:flex;flex-direction:column;pointer-events:none}
 .panel>*{pointer-events:auto}
-@media (min-aspect-ratio:1/1){.panel{right:12px;top:calc(var(--safet) + 64px);bottom:calc(var(--safeb) + 96px);width:min(390px,42vw);justify-content:flex-start}}
-@media (max-aspect-ratio:1/1){.panel{left:12px;right:12px;bottom:calc(var(--safeb) + 96px);max-height:50%;justify-content:flex-end}}
+@media (min-aspect-ratio:1/1){.panel{right:12px;top:calc(var(--safet) + 64px);bottom:calc(var(--safeb) + var(--dockH) + 24px);width:min(390px,42vw);justify-content:flex-start}}
+@media (max-aspect-ratio:1/1){.panel{left:12px;right:12px;bottom:calc(var(--safeb) + var(--dockH) + 24px);max-height:50%;justify-content:flex-end}}
 .card{background:var(--paper);border:1.5px solid var(--ink);border-radius:4px;padding:14px;display:flex;flex-direction:column;gap:12px;overflow:auto;max-height:100%}
 .cardtop{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .cardtop b{font-size:15px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--ink-2)}
 .fold{height:36px;min-width:44px;border:1.5px solid var(--ink);border-radius:4px;background:var(--paper);font:600 14px var(--font);cursor:pointer}
-.folded .cardbody{display:none}
+.folded .cardbody>:not(#quiz){display:none}.folded #quiz>:not(.q):not(.qhead){display:none}.folded #quiz .q{font-size:17px}
 .cardbody{display:flex;flex-direction:column;gap:12px}
 .card h2,.panel h2{margin:0;font-size:26px;font-weight:700;line-height:1.1;text-wrap:balance}
 .sub{font-size:16px;color:var(--ink-2)}
@@ -143,8 +143,16 @@ canvas#view.sk{touch-action:none;cursor:crosshair}
 .res b{font-size:32px;display:block}.res ul{margin:6px 0 0;padding-left:18px;font-size:15px}
 select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 15px var(--font);padding:0 8px;background:var(--paper);width:100%}
 /* moduli in basso */
-.tabs{position:absolute;z-index:5;left:50%;transform:translateX(-50%);bottom:calc(var(--safeb) + 12px);width:min(calc(100% - 24px),860px);display:grid;grid-template-columns:repeat(6,1fr);border:1.5px solid var(--ink);background:var(--paper);border-radius:4px;overflow:hidden}
-.tabs button{height:62px;border:0;background:var(--paper);font:700 clamp(14px,2.4vw,19px) var(--font);cursor:pointer;padding:0 4px}
+.dock{position:absolute;z-index:5;left:50%;transform:translateX(-50%);bottom:calc(var(--safeb) + 12px);width:min(calc(100% - 24px),860px);display:flex;gap:6px;align-items:stretch}
+.dock:has(#mods[hidden]){display:none}
+.tabs{flex:1;min-width:0;display:grid;grid-template-columns:repeat(6,1fr);border:1.5px solid var(--ink);background:var(--paper);border-radius:4px;overflow:hidden}
+#barTog{flex:none;width:44px;border:1.5px solid var(--ink);border-radius:4px;background:var(--paper);font:700 16px var(--font);cursor:pointer;padding:0}
+.barOff{--dockH:40px!important}
+.barOff .dock{left:12px;transform:none;width:auto;bottom:calc(var(--safeb) + 8px)}
+.barOff #mods{display:none}
+.barOff #barTog{width:auto;height:40px;padding:0 14px;font-size:14px}
+.tabs button .ls{display:none}
+.tabs button{height:var(--dockH);border:0;background:var(--paper);font:700 clamp(14px,2.4vw,19px) var(--font);cursor:pointer;padding:0 4px}
 .tabs button+button{border-left:1.5px solid var(--ink)}
 .tabs button[aria-pressed=true]{background:var(--red);color:#fff}
 /* menu */
@@ -162,6 +170,57 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
 .tbadge{height:44px;padding:0 12px;display:flex;align-items:center;background:var(--amber);border:1.5px solid var(--ink);border-radius:4px;font:700 15px var(--font)}
 #tLink{width:100%;height:44px;padding:0 8px;font:14px var(--font);border:1.5px solid var(--ink);border-radius:4px}
 :focus-visible{outline:2px solid var(--lake);outline-offset:2px}
+
+/* ---- toast risposta sulla carta ---- */
+.toast{position:absolute;z-index:8;left:50%;transform:translateX(-50%);top:calc(var(--safet) + 60px);width:min(540px,calc(100% - 24px));display:flex;align-items:center;gap:10px;padding:8px 8px 8px 12px;background:var(--paper);border:1.5px solid var(--ink);border-left-width:7px;border-radius:4px;font-size:16px;line-height:1.35;box-shadow:0 6px 18px rgba(0,0,0,.28)}
+.toast.ok{border-left-color:var(--forest)}.toast.no{border-left-color:var(--red)}
+.toast span{flex:1;min-width:0}
+.toast button{flex:none;min-height:42px;padding:0 16px;border:0;border-radius:4px;background:var(--ink);color:#fff;font:700 15px var(--font);cursor:pointer}
+.toast button[hidden]{display:none}
+.quiz.tt .fb,.quiz.tt #qNext{display:none}
+/* ---- profili dispositivo ---- */
+.d-tab{--dockH:52px}.d-phone{--dockH:44px}
+.d-tab .tabs button{font-size:16px}.d-phone .tabs button{font-size:12.5px;padding:0 1px}
+.d-phone .tabs button .lf{display:none}.d-phone .tabs button .ls{display:inline}
+.d-phone .dock,.d-tab .dock{bottom:calc(var(--safeb) + 8px)}
+.d-phone #barTog,.d-tab #barTog{width:40px}
+.d-phone .top{padding:calc(var(--safet) + 6px) 8px 0;gap:6px}.d-phone .state,.d-phone .fab,.d-phone .tbadge{height:38px;font-size:14px;padding:0 10px}
+.d-tab .state,.d-tab .fab{height:40px}
+.d-phone .hint,.d-tab .hint{top:calc(var(--safet) + 54px);left:8px;font-size:14px;padding:6px 10px;max-width:min(440px,calc(100% - 16px))}
+.d-phone .toast,.d-tab .toast{top:calc(var(--safet) + 52px)}
+.d-phone .card,.d-tab .card{padding:10px;gap:8px}
+.d-phone .cardbody,.d-tab .cardbody,.d-phone .setup,.d-tab .setup,.d-phone .quiz,.d-tab .quiz,.d-phone .learn,.d-tab .learn{gap:8px}
+.d-phone .card h2,.d-tab .card h2{font-size:21px}
+.d-phone .sub,.d-tab .sub{font-size:14px}
+.d-phone .cardtop b,.d-tab .cardtop b{font-size:12.5px}
+.d-phone .fold,.d-tab .fold{height:32px;font-size:13px}
+.d-phone .q,.d-tab .q{font-size:19px}
+.d-phone .qbox,.d-tab .qbox{font-size:15px;padding:8px 10px}
+.d-phone .opt,.d-tab .opt{min-height:46px;font-size:15.5px}
+.d-phone .btn,.d-tab .btn{min-height:44px;font-size:15px}
+.d-phone .tile,.d-tab .tile{min-height:48px;padding:7px 10px}
+.d-phone .tile b,.d-tab .tile b{font-size:16px}.d-phone .tile span,.d-tab .tile span{font-size:13px}
+.d-phone .chip,.d-tab .chip{height:36px;font-size:14px;padding:0 12px}
+.d-phone .entry b,.d-tab .entry b{font-size:15px}
+.d-phone .note,.d-tab .note{font-size:13px}
+.d-phone .ans input,.d-tab .ans input{height:46px;font-size:17px}
+.d-phone #zoomCtl button{width:40px;height:40px}.d-tab #zoomCtl button{width:44px;height:44px}
+.d-phone #zoomCtl{left:8px}
+.d-phone .menu,.d-tab .menu{top:calc(var(--safet) + 50px);max-height:calc(100% - var(--safet) - var(--dockH) - 70px)}
+/* telefono */
+.d-phone.port .panel{left:8px;right:8px;max-height:44%;bottom:calc(var(--safeb) + var(--dockH) + 16px)}
+.d-phone.land .panel{right:8px;left:auto;top:calc(var(--safet) + 50px);bottom:calc(var(--safeb) + var(--dockH) + 16px);width:min(310px,44vw);max-height:none}
+.d-phone.port #zoomCtl{top:calc(var(--safet) + 110px)}
+.d-phone.land #zoomCtl{top:calc(var(--safet) + 54px);transform:none}
+/* tablet */
+.d-tab.port .panel{left:12px;right:12px;max-height:40%;bottom:calc(var(--safeb) + var(--dockH) + 16px)}
+.d-tab.land .panel{right:10px;left:auto;top:calc(var(--safet) + 56px);bottom:calc(var(--safeb) + var(--dockH) + 16px);width:min(360px,36vw);max-height:none}
+.d-tab.port #zoomCtl{top:calc(var(--safet) + 120px);transform:none}
+.d-tab.land .panel{justify-content:flex-start}
+.barOff #barTog{white-space:nowrap;min-width:92px}
+.d-phone.land .toast{left:8px;transform:none;width:calc(100% - min(310px,44vw) - 24px)}
+.d-tab.land .toast{left:10px;transform:none;width:calc(100% - min(360px,36vw) - 30px)}
+.d-phone .quiz #qEnd,.d-tab .quiz #qEnd{min-height:38px}
 </style></head>
 <body>
 <div id="app">
@@ -177,6 +236,7 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
     <button class="fab" id="bMenu" type="button" aria-pressed="false">Menu</button>
   </div>
   <div class="hint" id="hint" hidden></div>
+  <div class="toast" id="qToast" role="status" hidden><span id="qToastTx"></span><button id="qToastNext" type="button">Avanti</button></div>
   <div class="msg" id="msg"><b>Preparo il motore di riconoscimento</b><span id="msgTx">Scarico le librerie, ci vuole qualche secondo.</span><div class="prog"><i id="prog"></i></div></div>
 
   <div class="start" id="start" hidden>
@@ -219,7 +279,7 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
    </div>
   </div>
 
-  <nav class="tabs" id="mods"><button type="button" data-m="esplora" aria-pressed="true">Esplora</button><button type="button" data-m="cantoni" aria-pressed="false">Cantoni</button><button type="button" data-m="luoghi" aria-pressed="false">Luoghi</button><button type="button" data-m="popolazione" aria-pressed="false">Popolazione</button><button type="button" data-m="competenze" aria-pressed="false">Competenze</button><button type="button" data-m="regioni" aria-pressed="false">Regioni</button></nav>
+  <div class="dock" id="dock"><nav class="tabs" id="mods"><button type="button" data-m="esplora" aria-pressed="true">Esplora</button><button type="button" data-m="cantoni" aria-pressed="false">Cantoni</button><button type="button" data-m="luoghi" aria-pressed="false">Luoghi</button><button type="button" data-m="popolazione" aria-pressed="false"><span class="lf">Popolazione</span><span class="ls">Popol.</span></button><button type="button" data-m="competenze" aria-pressed="false"><span class="lf">Competenze</span><span class="ls">Compet.</span></button><button type="button" data-m="regioni" aria-pressed="false">Regioni</button></nav><button id="barTog" type="button" aria-label="Nascondi la barra dei moduli">▾</button></div>
   <div id="skTools" hidden><span id="skLbl" style="align-self:center;font-weight:700">Schizzo</span><span id="skCols"></span><button class="btn" id="skW" type="button" style="flex:none;min-height:36px;width:90px">Spesso</button><button class="btn" id="skUndo" type="button" style="flex:none;min-height:36px;width:80px">Annulla</button><button class="btn" id="skClear" type="button" style="flex:none;min-height:36px;width:80px">Cancella</button><button class="btn" id="skSave" type="button" style="flex:none;min-height:36px;width:90px">Salva PNG</button><button class="btn pri" id="skEnd" type="button" style="flex:none;min-height:36px;width:80px">Fine</button></div>
 
   <div id="pm" hidden>
@@ -253,6 +313,7 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
   <button id="pmBack" type="button" hidden>Torna alla missione</button>
 
   <div class="menu" id="menu" hidden>
+    <div id="devSect"><h3>Dispositivo</h3><select id="devSel" class="sel" aria-label="Dispositivo in uso"></select></div>
     <div id="mapSect"><h3>Carta</h3><select id="mapSel2" class="sel" aria-label="Carta in uso"></select></div>
     <div><h3>Fotocamera</h3></div>
     <div class="row"><button class="btn" id="bFz" type="button" hidden>Blocca</button><button class="btn" id="bSw" type="button" hidden>Prossima camera</button></div>
@@ -2500,6 +2561,42 @@ $('bFold').addEventListener('click',()=>{const f=$('card').classList.toggle('fol
 const NOLOCK='Inquadra la carta per poter rispondere.';
 let hintTimer=null;
 new MutationObserver(()=>{const h=$('hint');if(h.hidden){clearTimeout(hintTimer);return}clearTimeout(hintTimer);hintTimer=setTimeout(()=>{h.hidden=true},9000)}).observe($('hint'),{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['hidden']});
+
+/* ---------- dispositivo ---------- */
+const DEVN={phone:'Smartphone',tab:'Tablet',big:'Schermo grande'};
+S.devPref=lsGet('swissarena.dev')||'auto';
+function detectDev(){const w=innerWidth,h=innerHeight,m=Math.min(w,h);
+  if(m<500)return 'phone';
+  const coarse=matchMedia('(pointer:coarse)').matches;
+  return (coarse||m<=820)?'tab':'big';}
+function applyDev(){
+  const d=(S.devPref&&S.devPref!=='auto')?S.devPref:detectDev(),land=innerWidth>innerHeight;
+  const b=document.body;b.classList.remove('d-phone','d-tab','d-big','land','port');
+  b.classList.add('d-'+d,land?'land':'port');S.dev=d;
+  const sel=$('devSel');if(sel){sel.options[0].textContent='Automatico (ora: '+DEVN[detectDev()]+')'}
+  if(S.frame)layoutView();
+}
+(function(){const sel=$('devSel');sel.innerHTML='<option value="auto">Automatico</option>'+Object.keys(DEVN).map(k=>'<option value="'+k+'">'+DEVN[k]+'</option>').join('');sel.value=S.devPref;
+  sel.addEventListener('change',()=>{S.devPref=sel.value;lsSet('swissarena.dev',S.devPref);applyDev()});
+  window.addEventListener('resize',applyDev);window.addEventListener('orientationchange',()=>setTimeout(applyDev,200));applyDev();})();
+/* barra moduli apribile */
+function setBar(off){document.body.classList.toggle('barOff',off);const t=$('barTog');t.textContent=off?'Moduli ▴':'▾';t.setAttribute('aria-label',off?'Mostra la barra dei moduli':'Nascondi la barra dei moduli');lsSet('swissarena.baroff',off?'1':'0')}
+$('barTog').addEventListener('click',()=>setBar(!document.body.classList.contains('barOff')));
+if(lsGet('swissarena.baroff')==='1')setBar(true);
+/* risposta del quiz sulla carta */
+function syncToast(){
+  const z=S.qz,qz=$('quiz'),t=$('qToast'),fb=$('qFb'),n=$('qNext');
+  const live=!!(z&&!z.over&&!qz.hidden);
+  qz.classList.toggle('tt',live);
+  const show=live&&!fb.hidden&&fb.textContent;
+  t.hidden=!show;
+  if(show){t.className='toast '+(fb.classList.contains('ok')?'ok':'no');$('qToastTx').textContent=fb.textContent;const tn=$('qToastNext');tn.hidden=n.hidden;tn.textContent=n.textContent}
+}
+$('qToastNext').addEventListener('click',()=>{$('qNext').click()});
+{const o=new MutationObserver(syncToast);
+ o.observe($('qFb'),{attributes:true,childList:true,characterData:true,subtree:true});
+ o.observe($('qNext'),{attributes:true,childList:true,characterData:true,subtree:true});
+ o.observe($('quiz'),{attributes:true,attributeFilter:['hidden']});}
 function refreshUI(){
   $('start').hidden=!(S.ready&&!S.live&&!S.frame&&$('msg').hidden)||S.pm;
   const vis=['info','chipsWrap','setup','learn','quiz','comp'].some(id=>!$(id).hidden);
