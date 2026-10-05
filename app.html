@@ -223,6 +223,19 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
 .d-phone.land .toast{left:8px;transform:none;width:calc(100% - min(310px,44vw) - 24px)}
 .d-tab.land .toast{left:10px;transform:none;width:calc(100% - min(360px,36vw) - 30px)}
 .d-phone .quiz #qEnd,.d-tab .quiz #qEnd{min-height:38px}
+
+/* ---- layout unico: tutto in basso, sopra la barra dei moduli ---- */
+#app #panel{left:50%;right:auto;top:auto;transform:translateX(-50%);bottom:calc(var(--safeb) + var(--dockH) + 24px);width:min(580px,calc(100% - 16px));max-height:70%;justify-content:flex-end}
+#app #panel .toast{position:static;transform:none;left:auto;top:auto;width:auto;margin:0 0 8px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+#app #panel .toast[hidden]{display:none}
+.top #bMenu{order:-1}
+.menu{right:auto!important;left:12px}
+#app #zoomCtl{left:12px;top:calc(var(--safet) + 64px);transform:none}
+.d-phone #zoomCtl{left:8px;top:calc(var(--safet) + 52px)!important}
+#app .hint{left:96px;top:calc(var(--safet) + 10px);max-width:calc(100% - 200px)}
+.d-phone .hint,.d-tab .hint{left:82px;top:calc(var(--safet) + 6px);max-width:calc(100% - 170px)}
+.sat .state,.sat #sub{display:none}
+.d-phone #app #panel{max-height:60%}.d-phone #app #panel .toast{font-size:14px;padding:6px 6px 6px 10px}.d-phone .quiz img{max-height:15vh!important}.d-phone .opt{min-height:40px}
 </style></head>
 <body>
 <div id="app">
@@ -239,7 +252,6 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
     <button class="fab" id="bMenu" type="button" aria-pressed="false">Menu</button>
   </div>
   <div class="hint" id="hint" hidden></div>
-  <div class="toast" id="qToast" role="status" hidden><span id="qToastTx"></span><button id="qToastNext" type="button">Avanti</button></div>
   <div class="msg" id="msg"><b>Preparo il motore di riconoscimento</b><span id="msgTx">Scarico le librerie, ci vuole qualche secondo.</span><div class="prog"><i id="prog"></i></div></div>
 
   <div class="start" id="start" hidden>
@@ -252,6 +264,7 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
   </div>
 
   <div class="panel" id="panel" hidden>
+<div class="toast" id="qToast" role="status" hidden><span id="qToastTx"></span><button id="qToastNext" type="button">Avanti</button></div>
    <div class="card" id="card">
     <div class="cardtop"><b id="cardTitle">Esplora</b><button class="fold" id="bFold" type="button" aria-label="Riduci il pannello">Nascondi</button></div>
     <div class="cardbody">
@@ -1539,7 +1552,8 @@ function draw(){
   if(L.nomi){
     if(clipped){ctx.restore();clipped=false}
     const cq=S.map&&S.map.clipD;const inQ=cq?(x,y)=>{let a=0;for(let i=0;i<4;i++){const p=cq[i],q=cq[(i+1)%4];const cr=(q[0]-p[0])*(y-p[1])-(q[1]-p[1])*(x-p[0]);a+=cr>=0?1:-1}return Math.abs(a)===4}:null;
-    ctx.font=`600 ${14*k}px Signika,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    const isSat=!!S.sat,fs=isSat?12.5*(f.width/$('view').parentElement.clientWidth):14*k;
+    ctx.font=`600 ${fs}px Signika,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
     const cand=[];
     for(const c of DB.com){
       if(!visible(c.b,H,W,Hh))continue;
@@ -1548,15 +1562,15 @@ function draw(){
       if((WEPS>0?1:-1)*wOf(H,c.c[0],c.c[1])<Math.abs(WEPS))continue;const q=applyH(H,c.c[0],c.c[1]);if(q[0]<0||q[1]<0||q[0]>W||q[1]>Hh)continue;
       cand.push({c,q,a:bw*bh,bw});
     }
-    cand.sort((x,y)=>y.a-x.a);const placed=[];const th=18*k;
+    if(isSat)cand.sort((x,y)=>(y.c.h||0)-(x.c.h||0));else cand.sort((x,y)=>y.a-x.a);const placed=[];const th=isSat?fs*1.4:18*k;
     for(const o of cand){
       const tw=ctx.measureText(o.c.n).width;
-      if(o.bw<tw*0.6)continue;
+      if(!isSat&&o.bw<tw*0.6)continue;
       const r=[o.q[0]-tw/2-3*k,o.q[1]-th/2,o.q[0]+tw/2+3*k,o.q[1]+th/2];
       if(r[0]<0||r[2]>W||r[1]<0||r[3]>Hh)continue;
       let hit=false;for(const p of placed){if(r[0]<p[2]&&r[2]>p[0]&&r[1]<p[3]&&r[3]>p[1]){hit=true;break}}
       if(hit)continue;placed.push(r);
-      ctx.lineWidth=3.6*k;ctx.strokeStyle='rgba(0,0,0,.8)';ctx.strokeText(o.c.n,o.q[0],o.q[1]);ctx.fillStyle='#fff';ctx.fillText(o.c.n,o.q[0],o.q[1]);
+      ctx.lineWidth=isSat?fs*.26:3.6*k;ctx.strokeStyle='rgba(0,0,0,.8)';ctx.strokeText(o.c.n,o.q[0],o.q[1]);ctx.fillStyle='#fff';ctx.fillText(o.c.n,o.q[0],o.q[1]);
     }
   }
   if(!clipped)clipped=doClip();
@@ -1641,12 +1655,14 @@ function satRender(){const s=S.sat;if(!s)return;s.raf=0;
       if(pt&&pt.ok){satPatch(ctx,pt.im,pz,px,py,z,x,y,Pz);break}}}
   draw()}
 function enterSat(){
+  document.body.classList.add('sat');
   pauseLive();stopStream();['bFz','bSw','bRe','camSel','bGo'].forEach(i=>$(i).hidden=true);
   S.sat={k:1,cx:0,cy:0,raf:0};satFit();S.sel=null;S.pinM=null;S.vz=1;S.vx=0;S.vy=0;S.mx=0;S.my=0;S.frame=null;
   $('view').hidden=false;$('info').hidden=true;$('chipsWrap').hidden=S.mod!=='esplora';$('hint').hidden=false;$('hint').textContent='Tocca un punto della mappa. Trascina per spostarti, pizzica per ingrandire.';
   setState('Mappa satellitare','ok');$('sub').textContent='swisstopo SWISSIMAGE';
   satRender()}
 function exitSat(){
+  document.body.classList.remove('sat');
   if(S.sat&&S.sat.raf)cancelAnimationFrame(S.sat.raf);S.sat=null;S.frame=null;S.H=null;S.Hi=null;S.sel=null;S.pinM=null;
   $('view').hidden=true;$('satMsg').hidden=true;$('hint').hidden=false;$('hint').textContent='Scegli una foto o avvia la fotocamera.';setState('Pronto','ok');$('sub').textContent=''}
 
@@ -2395,7 +2411,7 @@ function regShowQ(q){
   const it=q.it;
   if(q.mode==='localizza'){$('qText').textContent="Tocca sulla carta: dov'è "+REGART[it.name]+"?"}
   else if(q.mode==='nomina'){$('qText').textContent='Come si chiama questa regione naturale?';S.hl={rg:it.r,col:'rgba(224,162,27,.5)',line:'#E0A21B'};answerUI(q)}
-  else{$('qText').innerHTML='<img alt="Fotografia di un paesaggio svizzero" src="'+DB.ph[it.ph].d+'" style="width:100%;max-height:26vh;object-fit:cover;border-radius:4px;display:block;margin-bottom:6px">Da quale regione naturale viene questa foto?';answerUI(q)}
+  else{$('qText').innerHTML='<img alt="Fotografia di un paesaggio svizzero" src="'+DB.ph[it.ph].d+'" style="width:100%;max-height:min(21vh,240px);object-fit:cover;border-radius:4px;display:block;margin-bottom:6px">Da quale regione naturale viene questa foto?';answerUI(q)}
 }
 
 /* ---------- Prima media: missioni ---------- */
