@@ -359,7 +359,8 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
     <div id="devSect"><h3>Dispositivo</h3><select id="devSel" class="sel" aria-label="Dispositivo in uso"></select></div>
     <div id="mapSect"><h3>Carta</h3><select id="mapSel2" class="sel" aria-label="Carta in uso"></select></div>
     <div><h3>Fotocamera</h3></div>
-    <div class="row"><button class="btn" id="bFz" type="button" hidden>Blocca</button><button class="btn" id="bSw" type="button" hidden>Prossima camera</button></div>
+    <div class="row"><button class="btn" id="bFz" type="button" hidden>Blocca</button><button class="btn" id="bSw" type="button" hidden>Prossima camera</button><button class="btn" id="bRot" type="button" hidden>Ruota ↻</button></div>
+    <div class="lbl">Orientamento immagine</div><select class="sel" id="rotSel" aria-label="Orientamento immagine"><option value="auto">Automatico</option><option value="0">0° (normale)</option><option value="90">Ruotata di 90° in senso orario</option><option value="180">Ruotata di 180°</option><option value="270">Ruotata di 90° in senso antiorario</option></select>
     <select id="camSel" class="sel" hidden aria-label="Scegli telecamera"></select>
     <button class="btn pri" id="mPm" type="button" style="margin-bottom:8px">Prima media (missioni)</button>
     <div class="row"><button class="btn" id="mCam" type="button">Avvia la fotocamera</button><label class="btn" for="file">Scegli foto</label></div>
@@ -1756,10 +1757,18 @@ $('bGo').addEventListener('click',()=>{
 });
 
 /* ---------- modo dal vivo ---------- */
+function camRot(v){
+  const sel=lsGet('swissarena.rot')||'auto';if(sel!=='auto')return ((+sel)%360+360)%360;
+  const a=(screen.orientation&&screen.orientation.angle)||0,portrait=innerHeight>innerWidth,vp=v.videoHeight>v.videoWidth;
+  if(portrait===vp)return 0;
+  return portrait?(a===270?270:90):(a===270?90:270)}
 function capture(){
-  const v=$('vid'),s=Math.min(1,960/Math.max(v.videoWidth,v.videoHeight)),w=Math.round(v.videoWidth*s),h=Math.round(v.videoHeight*s),r=S.raw;
+  const v=$('vid'),rot=camRot(v),s=Math.min(1,960/Math.max(v.videoWidth,v.videoHeight)),w0=Math.round(v.videoWidth*s),h0=Math.round(v.videoHeight*s),sw=rot%180!==0,w=sw?h0:w0,h=sw?w0:h0,r=S.raw;
   if(r.width!==w||r.height!==h){r.width=w;r.height=h}
-  r.getContext('2d').drawImage(v,0,0,w,h);S.frame=r;
+  if(S.lastRot!==rot){S.lastRot=rot;S.forceRec=true}
+  const c=r.getContext('2d');c.setTransform(1,0,0,1,0,0);
+  if(rot){c.translate(w/2,h/2);c.rotate(rot*Math.PI/180);c.drawImage(v,-w0/2,-h0/2,w0,h0);c.setTransform(1,0,0,1,0,0)}else c.drawImage(v,0,0,w,h);
+  S.frame=r;
 }
 function grayOf(){
   const cv=S.cv,raw=S.raw,cs=Math.min(1,480/Math.max(raw.width,raw.height)),tw=Math.round(raw.width*cs),th=Math.round(raw.height*cs);
@@ -1883,7 +1892,7 @@ async function startLive(devId){
     try{const tr=S.stream.getVideoTracks()[0],cap=tr.getCapabilities&&tr.getCapabilities();if(cap&&cap.zoom&&cap.zoom.min!=null)await tr.applyConstraints({advanced:[{zoom:cap.zoom.min}]})}catch(e){}
     const v=$('vid');v.srcObject=S.stream;await v.play();
     S.live=true;S.H=null;S.Hi=null;S.Ht=null;S.tp=null;S.sel=null;S.pinM=null;if(S.prevGray){S.prevGray.delete();S.prevGray=null}
-    $('view').hidden=false;$('info').hidden=true;$('bGo').hidden=true;$('bFz').hidden=false;$('bFz').textContent='Blocca';$('bSw').hidden=false;$('bRe').hidden=false;
+    $('view').hidden=false;$('info').hidden=true;$('bGo').hidden=true;$('bFz').hidden=false;$('bFz').textContent='Blocca';$('bSw').hidden=false;$('bRot').hidden=false;$('bRe').hidden=false;
     await listCams();
     const lab=S.stream.getVideoTracks()[0].label||'';
     setState('Cerco la carta…');$('sub').textContent='Inquadra la carta';$('hint').hidden=false;$('hint').textContent='Telecamera: '+(lab||'sconosciuta')+'. Se non è quella giusta, cambiala dal Menu.';
@@ -1897,6 +1906,9 @@ $('bSw').addEventListener('click',async()=>{
   if(S.devs.length>1){const i=S.devs.findIndex(d=>d.deviceId===S.devId);startLive(S.devs[(i+1)%S.devs.length].deviceId)}
   else{S.facing=S.facing==='environment'?'user':'environment';startLive()}
 });
+$('rotSel').value=lsGet('swissarena.rot')||'auto';
+$('rotSel').addEventListener('change',e=>{lsSet('swissarena.rot',e.target.value);S.forceRec=true});
+$('bRot').addEventListener('click',()=>{const cur=camRot($('vid')),n=(cur+90)%360;lsSet('swissarena.rot',String(n));$('rotSel').value=String(n);S.forceRec=true});
 $('bRe').addEventListener('click',()=>{if(S.live){S.forceRec=true;setState('Ricalibro…')}});
 $('camSel').addEventListener('change',e=>startLive(e.target.value));
 if(navigator.mediaDevices&&navigator.mediaDevices.addEventListener)navigator.mediaDevices.addEventListener('devicechange',()=>{if(S.stream)listCams()});
@@ -1909,7 +1921,7 @@ $('file').addEventListener('change',async e=>{
   let bmp;try{bmp=await createImageBitmap(f,{imageOrientation:'from-image'})}catch(err){bmp=await createImageBitmap(f)}
   const c=grab(bmp,bmp.width,bmp.height);e.target.value='';
   if(S.sat)setMap(S.lastPhys||'arena');
-  pauseLive();stopStream();$('bFz').hidden=true;$('bSw').hidden=true;$('bRe').hidden=true;$('camSel').hidden=true;
+  pauseLive();stopStream();$('bFz').hidden=true;$('bSw').hidden=true;$('bRot').hidden=true;$('bRe').hidden=true;$('camSel').hidden=true;
   $('view').hidden=false;S.frame=c;S.H=null;draw();analyze(c);
 });
 
