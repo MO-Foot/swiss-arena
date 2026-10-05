@@ -59,6 +59,8 @@ canvas#view{position:absolute;left:0;top:0;transform-origin:0 0;touch-action:non
 @media (max-width:480px){.pmsheet{grid-template-columns:1fr}.pmq:nth-child(odd){border-right:0}.pmq:nth-child(n+2){border-top:1.5px solid var(--ink)}.pmq{min-height:110px;flex-direction:row;align-items:center;justify-content:flex-start}}
 @media (prefers-reduced-motion:reduce){.pmq,.pmb,.pmq span{transition:none}}
 .pmon .hint{display:none!important}
+#satAttr{position:absolute;z-index:9;left:8px;bottom:calc(var(--dockH,62px) + 8px);font:600 11px var(--font);color:#fff;text-shadow:0 0 3px #000,0 0 3px #000;pointer-events:none}
+#satMsg{position:absolute;z-index:6;left:50%;transform:translateX(-50%);top:calc(var(--safet,0px) + 64px);max-width:min(92vw,520px);background:var(--paper);border:1.5px solid var(--ink);border-radius:4px;padding:8px 12px;font:600 13px var(--font);text-align:center}
 #zoomCtl{position:absolute;z-index:5;left:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px}
 @media (max-aspect-ratio:1/1){#zoomCtl{top:calc(var(--safet) + 140px);transform:none}}
 #zoomCtl button{width:48px;height:48px;border:1.5px solid var(--ink);border-radius:4px;background:var(--paper);font:700 20px var(--font);cursor:pointer;padding:0}
@@ -227,6 +229,7 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
  <div class="stage" id="stage">
   <video id="vid" playsinline muted autoplay></video>
   <canvas id="view" hidden></canvas>
+  <div id="satAttr" hidden>© swisstopo · SWISSIMAGE</div><div id="satMsg" hidden></div>
   <div id="zoomCtl" hidden><button type="button" id="zIn" aria-label="Ingrandisci">+</button><button type="button" id="zOut" aria-label="Allontana">−</button><button type="button" id="zReset" aria-label="Zoom iniziale" style="font-size:14px">1×</button></div>
   <div class="top">
     <div class="state" id="state"><i></i><span id="stateTx">Carico…</span></div><span id="sub"></span>
@@ -1315,6 +1318,7 @@ const REF_TI="pARlBN0CYQfsA/cEQQQ9CEMEPQh8AtcF4QSRBDIFUgTpBHAHkAKPBf0B7wYfBGEIHQ
 const MAPS={
  arena:{id:'arena',name:'Swiss Arena',sub:'Il grande tappeto della Svizzera',b64:REF_B64,n:CFG.nRef,A:null,mods:['esplora','cantoni','luoghi','popolazione','competenze','regioni'],intro:'Appoggia il tablet sopra il tappeto e inquadra la carta: si aggancia da solo.',km:100},
  ticino:{id:'ticino',name:'Carta scolastica Ticino',sub:'Cantone Ticino, 1:150 000',b64:REF_TI,n:TIMETA.n,A:TIMETA.A,clipRef:TIMETA.clip,mods:['esplora','luoghi','popolazione','competenze'],compOff:['gr','rn','rnf','cant','pop','eco'],kd:'TI',recMs:10000,tilesOff:{popolazione:['mappa_c','classifica','piu','stima']},intro:'Appoggia la carta sul banco o sul pavimento e inquadrala dall\'alto: l\'app la riconosce da sola.',km:20},
+ sat:{id:'sat',name:'Mappa satellitare',sub:'Senza carta fisica · serve internet',virtual:true,n:0,A:null,mods:['esplora','cantoni','luoghi','popolazione','competenze','regioni'],intro:'Nessuna carta: usa la mappa satellitare di swisstopo.',km:100},
  svizzera:{id:'svizzera',name:'Carta scolastica Svizzera',sub:'In preparazione',soon:true}
 };
 const KN={ZH:'Zurigo',BE:'Berna',LU:'Lucerna',UR:'Uri',SZ:'Svitto',OW:'Obvaldo',NW:'Nidvaldo',GL:'Glarona',ZG:'Zugo',FR:'Friburgo',SO:'Soletta',BS:'Basilea Città',BL:'Basilea Campagna',SH:'Sciaffusa',AR:'Appenzello Esterno',AI:'Appenzello Interno',SG:'San Gallo',GR:'Grigioni',AG:'Argovia',TG:'Turgovia',TI:'Ticino',VD:'Vaud',VS:'Vallese',NE:'Neuchâtel',GE:'Ginevra',JU:'Giura'};
@@ -1381,7 +1385,7 @@ function mapAllows(m){return !S.map||S.map.mods.includes(m)}
 function inBox(M,x,y){const b=M.bbD;return !b||(x>=b[0]&&x<=b[2]&&y>=b[1]&&y<=b[3])}
 function loadMap(id){
   const cv=S.cv,M=MAPS[id];if(!cv||!M||M.soon)return false;
-  if(S.mapId!==id||!S.refDes){
+  if(!M.virtual&&(S.mapId!==id||!S.refDes)){
     if(S.refDes){S.refDes.delete();S.refDes=null}
     const bin=atob(M.b64),n=bin.length,u8=new Uint8Array(n);for(let i=0;i<n;i++)u8[i]=bin.charCodeAt(i);
     const N=M.n;S.refPts=new Uint16Array(u8.buffer,0,N*2);
@@ -1578,6 +1582,74 @@ function enterLocked(res,frame){
   $('bGo').hidden=false;$('bGo').textContent=S.stream?'Riprendi':'Nuova foto';$('bGo').dataset.mode='again';
   draw();
 }
+
+/* ---------- mappa satellitare swisstopo (senza carta fisica) ---------- */
+const SAT={tiles:new Map(),seq:0,fails:0,loaded:0,raf:0,url:(z,x,y)=>'https://wmts.geo.admin.ch/1.0.0/ch.swisstopo.swissimage/default/current/3857/'+z+'/'+x+'/'+y+'.jpeg'};
+function lv95ToWgs(E,N){const y=(E-2600000)/1e6,x=(N-1200000)/1e6;
+  const lo=2.6779094+4.728982*y+0.791484*y*x+0.1306*y*x*x-0.0436*y*y*y,la=16.9023892+3.238272*x-0.270978*y*y-0.002528*x*x-0.0447*y*y*x-0.0140*x*x*x;
+  return[lo*100/36,la*100/36]}
+function wgsToLv95(lon,lat){const p=(lat*3600-169028.66)/10000,l=(lon*3600-26782.5)/10000;
+  return[2600072.37+211455.93*l-10938.51*l*p-0.36*l*p*p-44.54*l*l*l,1200147.07+308807.95*p+3745.25*l*l+76.63*p*p-194.56*l*l*p+119.79*p*p*p]}
+function lv95ToData(E,N){const u=(E-GEO.E0)/GEO.div,v=(N-GEO.N0)/GEO.div;return[GEO.cx[0]+GEO.cx[1]*u+GEO.cx[2]*v,GEO.cy[0]+GEO.cy[1]*u+GEO.cy[2]*v]}
+function dataToTile(x,y,z){const l=toLV95(x,y),w=lv95ToWgs(l[0],l[1]),n=Math.pow(2,z),r=w[1]*Math.PI/180;
+  return[(w[0]+180)/360*n,(1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n]}
+function tileToData(z,tx,ty){const n=Math.pow(2,z),lon=tx/n*360-180,lat=Math.atan(Math.sinh(Math.PI*(1-2*ty/n)))*180/Math.PI,l=wgsToLv95(lon,lat);return lv95ToData(l[0],l[1])}
+function satBox(){let b=[1e9,1e9,-1e9,-1e9];for(const c of DB.cant){b[0]=Math.min(b[0],c.b[0]);b[1]=Math.min(b[1],c.b[1]);b[2]=Math.max(b[2],c.b[2]);b[3]=Math.max(b[3],c.b[3])}return b}
+function satFit(){const par=$('view').parentElement,b=satBox(),s=S.sat;
+  s.cx=(b[0]+b[2])/2;s.cy=(b[1]+b[3])/2;s.k=Math.min(par.clientWidth/((b[2]-b[0])*1.08),par.clientHeight/((b[3]-b[1])*1.08));s.kmin=s.k*0.7;s.kmax=KM*1000/6}
+function satClamp(){const s=S.sat,b=satBox();s.k=Math.max(s.kmin,Math.min(s.kmax,s.k));s.cx=Math.max(b[0]-40,Math.min(b[2]+40,s.cx));s.cy=Math.max(b[1]-40,Math.min(b[3]+40,s.cy))}
+function satPan(dx,dy){const s=S.sat;if(!s)return;s.cx-=dx/s.k;s.cy-=dy/s.k;satClamp();satSchedule()}
+function satZoomAbs(nk,cx,cy){const s=S.sat;if(!s)return;const r=$('view').parentElement.getBoundingClientRect(),px=cx-r.left-r.width/2,py=cy-r.top-r.height/2;
+  const x0=s.cx+px/s.k,y0=s.cy+py/s.k;s.k=nk;satClamp();s.cx=x0-px/s.k;s.cy=y0-py/s.k;satClamp();satSchedule()}
+function satSchedule(){if(!S.sat||S.sat.raf)return;S.sat.raf=requestAnimationFrame(satRender)}
+function satNote(){const m=$('satMsg');
+  if(SAT.loaded===0&&SAT.fails>=6){m.textContent='Lo sfondo satellitare non si carica (serve internet). I confini e i quiz funzionano comunque.';m.hidden=false;clearTimeout(SAT.mt);SAT.mt=setTimeout(()=>{m.hidden=true},9000)}
+  else m.hidden=true}
+function satTile(z,x,y){const k=z+'/'+x+'/'+y;let t=SAT.tiles.get(k);if(t){t.u=++SAT.seq;return t}
+  const im=new Image();t={im,ok:false,err:false,u:++SAT.seq};
+  im.onload=()=>{t.ok=true;SAT.loaded++;satNote();satSchedule()};
+  im.onerror=()=>{t.err=true;SAT.fails++;satNote();setTimeout(()=>{if(SAT.tiles.get(k)===t)SAT.tiles.delete(k)},4000)};
+  im.src=SAT.url(z,x,y);SAT.tiles.set(k,t);
+  if(SAT.tiles.size>450){const a=[...SAT.tiles.entries()].sort((p,q)=>p[1].u-q[1].u).slice(0,120);for(const e of a)SAT.tiles.delete(e[0])}
+  return t}
+function satFrame(){const par=$('view').parentElement,dpr=Math.min(window.devicePixelRatio||1,1.5),w=Math.max(200,Math.round(par.clientWidth*dpr)),h=Math.max(200,Math.round(par.clientHeight*dpr));
+  if(!S.frame||S.frame.width!==w||S.frame.height!==h){const c=document.createElement('canvas');c.width=w;c.height=h;S.frame=c}return S.frame}
+function satPatch(ctx,img,iz,ix,iy,z,x,y,P){
+  const N=4,q=Math.pow(2,z-iz),cs=256/(N*q),sz=img.naturalWidth||256,sc=sz/256;
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++){
+    const sx=((x+i/N)/q-ix)*256,sy=((y+j/N)/q-iy)*256;
+    const a=P(x+i/N,y+j/N),b=P(x+(i+1)/N,y+j/N),c=P(x+i/N,y+(j+1)/N);
+    const m0=(b[0]-a[0])/cs,m1=(b[1]-a[1])/cs,m2=(c[0]-a[0])/cs,m3=(c[1]-a[1])/cs;
+    ctx.setTransform(m0,m1,m2,m3,a[0]-m0*sx-m2*sy,a[1]-m1*sx-m3*sy);
+    const e=0.5,x0=Math.max(0,sx-e),y0=Math.max(0,sy-e),x1=Math.min(256,sx+cs+e),y1=Math.min(256,sy+cs+e);
+    ctx.drawImage(img,x0*sc,y0*sc,(x1-x0)*sc,(y1-y0)*sc,x0,y0,x1-x0,y1-y0)}
+  ctx.setTransform(1,0,0,1,0,0)}
+function satRender(){const s=S.sat;if(!s)return;s.raf=0;
+  const f=satFrame(),par=$('view').parentElement,r=f.width/par.clientWidth,sc=s.k*r,W=f.width,Hh=f.height,ctx=f.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#1c2a25';ctx.fillRect(0,0,W,Hh);
+  const H=[sc,0,W/2-sc*s.cx,0,sc,Hh/2-sc*s.cy,0,0,1];setH(H);
+  const mpp=KM*1000/sc;let z=Math.ceil(Math.log2(107000/(mpp*1.3)));z=Math.max(6,Math.min(18,z));
+  const rng=zz=>{let a=1e9,b=1e9,c=-1e9,d=-1e9;for(let i=0;i<=10;i++)for(let j=0;j<=10;j++){const dd=applyH(S.Hi,W*i/10,Hh*j/10),t=dataToTile(dd[0],dd[1],zz);a=Math.min(a,t[0]);b=Math.min(b,t[1]);c=Math.max(c,t[0]);d=Math.max(d,t[1])}
+    const n=Math.pow(2,zz)-1;return[Math.max(0,Math.floor(a)),Math.max(0,Math.floor(b)),Math.min(n,Math.floor(c)),Math.min(n,Math.floor(d))]};
+  let R=rng(z);while((R[2]-R[0]+1)*(R[3]-R[1]+1)>140&&z>6){z--;R=rng(z)}
+  const P=(zz)=>(tx,ty)=>{const d=tileToData(zz,tx,ty);return[sc*(d[0]-s.cx)+W/2,sc*(d[1]-s.cy)+Hh/2]};
+  const Pz=P(z);
+  for(let y=R[1];y<=R[3];y++)for(let x=R[0];x<=R[2];x++){
+    const t=satTile(z,x,y);
+    if(t.ok){satPatch(ctx,t.im,z,x,y,z,x,y,Pz);continue}
+    for(let up=1;up<=4&&z-up>=0;up++){const pz=z-up,px=x>>up,py=y>>up,k=pz+'/'+px+'/'+py,pt=SAT.tiles.get(k);
+      if(pt&&pt.ok){satPatch(ctx,pt.im,pz,px,py,z,x,y,Pz);break}}}
+  draw()}
+function enterSat(){
+  pauseLive();stopStream();['bFz','bSw','bRe','camSel','bGo'].forEach(i=>$(i).hidden=true);
+  S.sat={k:1,cx:0,cy:0,raf:0};satFit();S.sel=null;S.pinM=null;S.vz=1;S.vx=0;S.vy=0;S.mx=0;S.my=0;S.frame=null;
+  $('view').hidden=false;$('info').hidden=true;$('chipsWrap').hidden=S.mod!=='esplora';$('hint').hidden=false;$('hint').textContent='Tocca un punto della mappa. Trascina per spostarti, pizzica per ingrandire.';
+  setState('Mappa satellitare','ok');$('sub').textContent='swisstopo SWISSIMAGE';
+  satRender()}
+function exitSat(){
+  if(S.sat&&S.sat.raf)cancelAnimationFrame(S.sat.raf);S.sat=null;S.frame=null;S.H=null;S.Hi=null;S.sel=null;S.pinM=null;
+  $('view').hidden=true;$('satMsg').hidden=true;$('hint').hidden=false;$('hint').textContent='Scegli una foto o avvia la fotocamera.';setState('Pronto','ok');$('sub').textContent=''}
+
 /* ---------- zoom e spostamento della vista ---------- */
 S.vz=1;S.vx=0;S.vy=0;S.mx=0;S.my=0;
 const PTR=new Map();let pinch=null,dragAcc=0;
@@ -1592,19 +1664,19 @@ function zoomAt(nz,cx,cy){
   const par=$('view').parentElement,r=par.getBoundingClientRect(),px=cx-r.left-r.width/2,py=cy-r.top-r.height/2;
   nz=Math.max(0.55,Math.min(5,nz));const q=nz/S.vz;S.vx=px-(px-S.vx)*q;S.vy=py-(py-S.vy)*q;S.vz=nz;layoutView();if(S.frame)draw();
 }
-function zoomCenter(f){const r=$('view').parentElement.getBoundingClientRect();zoomAt(S.vz*f,r.left+r.width/2,r.top+r.height/2)}
-$('zIn').onclick=()=>zoomCenter(1.4);$('zOut').onclick=()=>zoomCenter(1/1.4);$('zReset').onclick=()=>{S.vz=1;S.vx=0;S.vy=0;layoutView();if(S.frame)draw()};
-window.addEventListener('resize',layoutView);
-$('view').addEventListener('wheel',e=>{if(!S.frame)return;e.preventDefault();zoomAt(S.vz*Math.exp(-e.deltaY*0.0015),e.clientX,e.clientY)},{passive:false});
+function zoomCenter(f){const r=$('view').parentElement.getBoundingClientRect();if(S.sat){satZoomAbs(S.sat.k*f,r.left+r.width/2,r.top+r.height/2);return}zoomAt(S.vz*f,r.left+r.width/2,r.top+r.height/2)}
+$('zIn').onclick=()=>zoomCenter(1.4);$('zOut').onclick=()=>zoomCenter(1/1.4);$('zReset').onclick=()=>{if(S.sat){satFit();satSchedule();return}S.vz=1;S.vx=0;S.vy=0;layoutView();if(S.frame)draw()};
+window.addEventListener('resize',()=>{layoutView();if(S.sat)satSchedule()});
+$('view').addEventListener('wheel',e=>{if(!S.frame)return;e.preventDefault();if(S.sat)satZoomAbs(S.sat.k*Math.exp(-e.deltaY*0.0015),e.clientX,e.clientY);else zoomAt(S.vz*Math.exp(-e.deltaY*0.0015),e.clientX,e.clientY)},{passive:false});
 $('view').addEventListener('pointerdown',e=>{
   PTR.set(e.pointerId,{x:e.clientX,y:e.clientY});if(PTR.size===1){dragAcc=0;S.noClick=false}
-  if(PTR.size===2){S.drawing=null;const [a,b]=[...PTR.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,z:S.vz};S.noClick=true}
+  if(PTR.size===2){S.drawing=null;const [a,b]=[...PTR.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,z:S.sat?S.sat.k:S.vz};S.noClick=true}
 });
 $('view').addEventListener('pointermove',e=>{
   const p=PTR.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
   if(PTR.size>=2&&pinch){const [a,b]=[...PTR.values()];const d=Math.hypot(a.x-b.x,a.y-b.y)||1;const cx=(a.x+b.x)/2,cy=(a.y+b.y)/2;
-    const mdx=dx/2,mdy=dy/2;S.vx+=mdx;S.vy+=mdy;zoomAt(pinch.z*d/pinch.d,cx,cy);return}
-  if(PTR.size===1&&!S.sketch){dragAcc+=Math.abs(dx)+Math.abs(dy);if(dragAcc>10){S.noClick=true;S.vx+=dx;S.vy+=dy;layoutView()}}
+    const mdx=dx/2,mdy=dy/2;if(S.sat){satPan(mdx,mdy);satZoomAbs(pinch.z*d/pinch.d,cx,cy);return}S.vx+=mdx;S.vy+=mdy;zoomAt(pinch.z*d/pinch.d,cx,cy);return}
+  if(PTR.size===1&&!S.sketch){dragAcc+=Math.abs(dx)+Math.abs(dy);if(dragAcc>10){S.noClick=true;if(S.sat)satPan(dx,dy);else{S.vx+=dx;S.vy+=dy;layoutView()}}}
 });
 const ptrEnd=e=>{PTR.delete(e.pointerId);if(PTR.size<2)pinch=null};
 $('view').addEventListener('pointerup',ptrEnd);$('view').addEventListener('pointercancel',ptrEnd);
@@ -1753,6 +1825,7 @@ async function listCams(){
   }catch(e){}
 }
 async function startLive(devId){
+  if(S.sat)setMap(S.lastPhys||'arena');
   try{
     stopStream();
     const base={width:{ideal:1280},height:{ideal:960}};
@@ -1787,6 +1860,7 @@ $('file').addEventListener('change',async e=>{
   const f=e.target.files&&e.target.files[0];if(!f||!S.ready)return;
   let bmp;try{bmp=await createImageBitmap(f,{imageOrientation:'from-image'})}catch(err){bmp=await createImageBitmap(f)}
   const c=grab(bmp,bmp.width,bmp.height);e.target.value='';
+  if(S.sat)setMap(S.lastPhys||'arena');
   pauseLive();stopStream();$('bFz').hidden=true;$('bSw').hidden=true;$('bRe').hidden=true;$('camSel').hidden=true;
   $('view').hidden=false;S.frame=c;S.H=null;draw();analyze(c);
 });
@@ -2556,12 +2630,15 @@ function mapUI(){
 function setMap(id){
   if(!mapOK(id)||!S.cv)return;
   if(id===S.mapId){mapUI();return}
-  loadMap(id);lsSet('swissarena.map',id);T.map=id;saveCfg();
+  const wasSat=!!S.sat;
+  loadMap(id);lsSet('swissarena.map',id);T.map=id;saveCfg();if(!MAPS[id].virtual)S.lastPhys=id;
   S.H=null;S.Hi=null;S.Ht=null;S.tp=null;S.sel=null;S.pinM=null;S.lastRec=0;
   if(S.prevGray){S.prevGray.delete();S.prevGray=null}
   resetModState();if(S.pm)pmClose();
   S.vz=1;S.vx=0;S.vy=0;
   mapUI();applyCfg();
+  if(wasSat&&!MAPS[id].virtual)exitSat();
+  if(MAPS[id].virtual){enterSat();return}
   if(S.live){setState('Cerco la carta…');$('sub').textContent='Inquadra la carta'}
   else if(S.frame){draw();analyze(S.frame)}
 }
@@ -2618,7 +2695,7 @@ function refreshUI(){
   const vis=['info','chipsWrap','setup','learn','quiz','comp'].some(id=>!$(id).hidden);
   $('panel').hidden=!vis||(!S.ready)||S.pm;
   $('cardTitle').textContent=!$('quiz').hidden?'Quiz':S.mod==='cantoni'?'Cantoni':S.mod==='luoghi'?'Luoghi':S.mod==='popolazione'?'Popolazione':S.mod==='competenze'?'Sfide':S.mod==='regioni'?'Regioni naturali':'Esplora';
-  $('bRe').hidden=!S.live;$('zoomCtl').hidden=$('view').hidden||!S.frame;
+  $('satAttr').hidden=!S.sat;$('bRe').hidden=!S.live;$('zoomCtl').hidden=$('view').hidden||!S.frame;
   $('mCam').textContent=S.live?'Riavvia la fotocamera':'Avvia la fotocamera';
   const z=S.qz;if(z&&!z.over&&!z.answered&&!S.H&&z.qs[z.i].mode!=='foto'){$('qNote').textContent=NOLOCK;$('qNote').hidden=false}
   else if(z&&$('qNote').textContent===NOLOCK&&S.H){$('qNote').hidden=true}
@@ -2628,7 +2705,7 @@ setInterval(refreshUI,250);
 (async()=>{
   try{
     await bootCv();
-    mapUI();S.ready=true;msg('','',false);setState('Pronto','ok');applyCfg();if(T.pm&&T.pm.on)pmOpen();
+    mapUI();S.ready=true;msg('','',false);setState('Pronto','ok');applyCfg();if(S.map&&S.map.virtual)enterSat();if(T.pm&&T.pm.on)pmOpen();
     if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)$('bCam').disabled=false;else $('bCam').hidden=true;
   }catch(e){msg('Non parte',String(e.message||e));setState('Errore','bad')}
 })();
