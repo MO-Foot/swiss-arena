@@ -228,24 +228,45 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
 .d-phone .quiz #qEnd,.d-tab .quiz #qEnd{min-height:38px}
 
 /* ---- layout unico: tutto in basso, sopra la barra dei moduli ---- */
-#app #panel{left:50%;right:auto;top:auto;transform:translateX(-50%);bottom:calc(var(--safeb) + var(--dockH) + 24px);width:min(580px,calc(100% - 16px));max-height:70%;justify-content:flex-end}
+#app #panel{left:50%;right:auto;top:auto;transform:translateX(-50%);bottom:calc(var(--safeb) + 12px);width:min(580px,calc(100% - 16px));max-height:70%;justify-content:flex-end}
 #app #panel .toast{position:static;transform:none;left:auto;top:auto;width:auto;margin:0 0 8px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 #app #panel .toast[hidden]{display:none}
 .top #bMenu{order:-1}
 .menu{right:auto!important;left:12px}
-#app #zoomCtl{left:12px;top:calc(var(--safet) + 64px);transform:none}
-.d-phone #zoomCtl{left:8px;top:calc(var(--safet) + 52px)!important}
 #app .hint{left:96px;top:calc(var(--safet) + 10px);max-width:calc(100% - 200px)}
 .d-phone .hint,.d-tab .hint{left:82px;top:calc(var(--safet) + 6px);max-width:calc(100% - 170px)}
+.d-phone #app .hint{left:112px;max-width:calc(100% - 180px);font-size:13px;padding:5px 8px}
+.fold{min-width:40px;height:32px}
 .sat .state,.sat #sub{display:none}
 .d-phone #app #panel{max-height:60%}.d-phone #app #panel .toast{font-size:14px;padding:6px 6px 6px 10px}.d-phone .quiz img{max-height:15vh!important}.d-phone .opt{min-height:40px}
+
+/* ---- stile mappa: zoom tondi in alto a destra, moduli a sinistra apribili ---- */
+:root,body,body.d-tab,body.d-phone,body.barOff{--dockH:0px!important}
+#app #zoomCtl{left:auto;right:12px;top:calc(var(--safet) + 64px);transform:none;gap:10px}
+#app #zoomCtl button{width:46px;height:46px;border-radius:50%;border:0;background:rgba(34,42,46,.92);color:#fff;box-shadow:0 1px 5px rgba(0,0,0,.45);font:600 22px var(--font)}
+#app #zoomCtl #zReset{font-size:14px}
+.d-phone #app #zoomCtl{right:8px;top:calc(var(--safet) + 54px)}
+.d-phone #app #zoomCtl button{width:42px;height:42px}
+#dock{left:12px!important;right:auto;transform:none!important;top:calc(var(--safet) + 64px);bottom:auto!important;width:auto!important;flex-direction:column;align-items:flex-start;gap:6px}
+.d-phone #dock{left:8px!important;top:calc(var(--safet) + 54px)}
+#dock #barTog{order:-1;width:auto;min-width:44px;height:34px;padding:0 12px;font-size:14px;white-space:nowrap;background:var(--paper)}
+#dock #mods{display:flex;flex-direction:column;grid-template-columns:none;width:150px;flex:none}
+.barOff #dock #mods{display:none}
+#dock #mods button{height:44px;font-size:16px;text-align:left;padding:0 14px;border-bottom:1px solid var(--rule)}
+#dock #mods button:last-child{border-bottom:0}
+#dock #mods button .lf{display:inline!important}#dock #mods button .ls{display:none!important}
+.d-phone #dock #mods{width:132px}.d-phone #dock #mods button{height:40px;font-size:15px;padding:0 10px}
+#satAttr{bottom:2px;left:6px}
+#scaleBar{position:absolute;z-index:3;left:12px;bottom:calc(var(--safeb) + 20px);pointer-events:none;color:#fff;font:700 12px var(--font);text-shadow:0 0 3px #000,0 0 3px #000}
+#scaleBar i{display:block;height:7px;border:2px solid #fff;border-top:0;box-shadow:0 0 3px #000;margin-top:2px}
+.fold{font-size:16px;line-height:1}
 </style></head>
 <body>
 <div id="app">
  <div class="stage" id="stage">
   <video id="vid" playsinline muted autoplay></video>
   <canvas id="view" hidden></canvas>
-  <div id="satAttr" hidden>© swisstopo · SWISSIMAGE</div><div id="satMsg" hidden></div>
+  <div id="satAttr" hidden>© swisstopo · SWISSIMAGE</div><div id="satMsg" hidden></div><div id="scaleBar" hidden><span></span><i></i></div>
   <div id="zoomCtl" hidden><button type="button" id="zIn" aria-label="Ingrandisci">+</button><button type="button" id="zOut" aria-label="Allontana">−</button><button type="button" id="zReset" aria-label="Zoom iniziale" style="font-size:14px">1×</button></div>
   <div class="top">
     <div class="state" id="state"><i></i><span id="stateTx">Carico…</span></div><span id="sub"></span>
@@ -269,7 +290,7 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
   <div class="panel" id="panel" hidden>
 <div class="toast" id="qToast" role="status" hidden><span id="qToastTx"></span><button id="qToastNext" type="button">Avanti</button></div>
    <div class="card" id="card">
-    <div class="cardtop"><b id="cardTitle">Esplora</b><button class="fold" id="bFold" type="button" aria-label="Riduci il pannello">Nascondi</button></div>
+    <div class="cardtop"><b id="cardTitle">Esplora</b><button class="fold" id="bFold" type="button" aria-label="Riduci il pannello">▾</button></div>
     <div class="cardbody">
       <div id="info" hidden><h2 id="iName"></h2><div class="sub" id="iSub"></div><div class="entries"><div class="entry"><span>Cantone</span><b id="iK"></b></div><div class="entry"><span>Distretto</span><b id="iD"></b></div><div class="entry"><span>N. UST</span><b id="iN"></b></div></div><div class="note" id="iC"></div></div>
       <div id="chipsWrap" hidden><div class="lbl">Cosa vedere sulla carta</div>
@@ -1527,6 +1548,9 @@ function visible(b,H,W,Hh){
   const cs=[[b[0],b[1]],[b[2],b[1]],[b[2],b[3]],[b[0],b[3]]];const s=WEPS>0?1:-1;
   for(const p of cs){if(s*wOf(H,p[0],p[1])<Math.abs(WEPS))return true}
   const pts=cs.map(p=>applyH(H,p[0],p[1]));let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const p of pts){x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);y0=Math.min(y0,p[1]);y1=Math.max(y1,p[1])}return !(x1<0||y1<0||x0>W||y0>Hh)}
+function updScale(sc){const el=$('scaleBar'),cv=$('view'),r=cv.getBoundingClientRect();if(!sc||!isFinite(sc)||!r.width){el.hidden=true;return}
+  const mpp=KM*1000/(sc*(r.width/cv.width)),tg=mpp*110,pw=Math.pow(10,Math.floor(Math.log10(tg)));let v=pw;for(const m of [1,2,5,10])if(m*pw<=tg)v=m*pw;
+  el.hidden=false;el.firstChild.textContent=v>=1000?(v/1000)+' km':v+' m';el.lastChild.style.width=Math.round(v/mpp)+'px'}
 function draw(){
   const cv=$('view'),ctx=cv.getContext('2d'),f=S.frame;if(!f)return;
   const mf=S.vz<0.98?0.4:0,mx=Math.round(f.width*mf),my=Math.round(f.height*mf),cw=f.width+2*mx,ch=f.height+2*my;S.mx=mx;S.my=my;
@@ -1534,7 +1558,7 @@ function draw(){
   ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#101211';ctx.fillRect(0,0,cw,ch);ctx.drawImage(f,mx,my);
   if(!S.H)return;
   const H=mul3([1,0,mx,0,1,my,0,0,1],S.H),W=cw,Hh=ch,k=Math.max(f.width,f.height)/1000,L=eff();setEps(H,S.cx||0,S.cy||0);
-  const sc=Math.sqrt(Math.abs(H[0]*H[4]-H[1]*H[3]));
+  const sc=Math.sqrt(Math.abs(H[0]*H[4]-H[1]*H[3]));updScale(sc);
   ctx.lineJoin='round';
   let clipped=false;
   const doClip=()=>{if(S.map&&S.map.clipD){const cc=S.map.clipD,sg=WEPS>0?1:-1;if(cc.every(p=>sg*wOf(H,p[0],p[1])>Math.abs(WEPS))){ctx.save();ctx.beginPath();cc.forEach((p,i)=>{const q=applyH(H,p[0],p[1]);if(i)ctx.lineTo(q[0],q[1]);else ctx.moveTo(q[0],q[1])});ctx.closePath();ctx.clip();return true}}return false};
@@ -2040,7 +2064,7 @@ function startQuiz(retry){
   const qs=retry||makeQuestions();if(!qs.length)return;
   resetModState();S.learnPois=null;
   S.qz={qs,i:0,score:0,wrong:[],over:false,answered:false};
-  $('card').classList.remove('folded');$('bFold').textContent='Nascondi';$('setup').hidden=true;$('quiz').hidden=false;$('hint').hidden=true;$('qEnd').hidden=false;$('qEnd').textContent='Esci';$('qNext').onclick=null;
+  $('card').classList.remove('folded');$('bFold').textContent='▾';$('setup').hidden=true;$('quiz').hidden=false;$('hint').hidden=true;$('qEnd').hidden=false;$('qEnd').textContent='Esci';$('qNext').onclick=null;
   showQ();
 }
 function opts4(q){
@@ -2669,7 +2693,7 @@ $('bMenu').addEventListener('click',()=>{const h=$('menu').hidden;$('menu').hidd
 $('stage').addEventListener('pointerdown',e=>{if(!$('menu').hidden&&!e.target.closest('#menu')&&!e.target.closest('#bMenu')){$('menu').hidden=true;$('bMenu').setAttribute('aria-pressed',false)}});
 $('mCam').addEventListener('click',()=>{if(S.ready){$('menu').hidden=true;$('bMenu').setAttribute('aria-pressed',false);startLive()}});
 $('file').addEventListener('change',()=>{$('menu').hidden=true;$('bMenu').setAttribute('aria-pressed',false)});
-$('bFold').addEventListener('click',()=>{const f=$('card').classList.toggle('folded');$('bFold').textContent=f?'Mostra':'Nascondi'});
+$('bFold').addEventListener('click',()=>{const f=$('card').classList.toggle('folded');$('bFold').textContent=f?'▴':'▾';$('bFold').setAttribute('aria-label',f?'Apri il pannello':'Riduci il pannello')});
 const NOLOCK='Inquadra la carta per poter rispondere.';
 let hintTimer=null;
 new MutationObserver(()=>{const h=$('hint');if(h.hidden){clearTimeout(hintTimer);return}clearTimeout(hintTimer);hintTimer=setTimeout(()=>{h.hidden=true},9000)}).observe($('hint'),{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['hidden']});
@@ -2692,9 +2716,9 @@ function applyDev(){
   sel.addEventListener('change',()=>{S.devPref=sel.value;lsSet('swissarena.dev',S.devPref);applyDev()});
   window.addEventListener('resize',applyDev);window.addEventListener('orientationchange',()=>setTimeout(applyDev,200));applyDev();})();
 /* barra moduli apribile */
-function setBar(off){document.body.classList.toggle('barOff',off);const t=$('barTog');t.textContent=off?'Moduli ▴':'▾';t.setAttribute('aria-label',off?'Mostra la barra dei moduli':'Nascondi la barra dei moduli');lsSet('swissarena.baroff',off?'1':'0')}
+function setBar(off){document.body.classList.toggle('barOff',off);const t=$('barTog');t.textContent=off?'Moduli ▾':'▴';t.setAttribute('aria-label',off?'Mostra la barra dei moduli':'Nascondi la barra dei moduli');lsSet('swissarena.baroff',off?'1':'0')}
 $('barTog').addEventListener('click',()=>setBar(!document.body.classList.contains('barOff')));
-if(lsGet('swissarena.baroff')==='1')setBar(true);
+if(lsGet('swissarena.baroff')==='1'||(lsGet('swissarena.baroff')==null&&Math.min(innerWidth,innerHeight)<500))setBar(true);else setBar(false);
 /* risposta del quiz sulla carta */
 function syncToast(){
   const z=S.qz,qz=$('quiz'),t=$('qToast'),fb=$('qFb'),n=$('qNext');
@@ -2714,7 +2738,7 @@ function refreshUI(){
   const vis=['info','chipsWrap','setup','learn','quiz','comp'].some(id=>!$(id).hidden);
   $('panel').hidden=!vis||(!S.ready)||S.pm;
   $('cardTitle').textContent=!$('quiz').hidden?'Quiz':S.mod==='cantoni'?'Cantoni':S.mod==='luoghi'?'Luoghi':S.mod==='popolazione'?'Popolazione':S.mod==='competenze'?'Sfide':S.mod==='regioni'?'Regioni naturali':'Esplora';
-  $('satAttr').hidden=!S.sat;$('bRe').hidden=!S.live;$('zoomCtl').hidden=$('view').hidden||!S.frame;
+  $('satAttr').hidden=!S.sat;if(!S.H)$('scaleBar').hidden=true;$('bRe').hidden=!S.live;$('zoomCtl').hidden=$('view').hidden||!S.frame;
   $('mCam').textContent=S.live?'Riavvia la fotocamera':'Avvia la fotocamera';
   const z=S.qz;if(z&&!z.over&&!z.answered&&!S.H&&z.qs[z.i].mode!=='foto'){$('qNote').textContent=NOLOCK;$('qNote').hidden=false}
   else if(z&&$('qNote').textContent===NOLOCK&&S.H){$('qNote').hidden=true}
