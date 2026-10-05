@@ -116,7 +116,10 @@ canvas#view{position:absolute;left:0;top:0;transform-origin:0 0;touch-action:non
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chip{height:42px;padding:0 15px;border:1.5px solid var(--ink);border-radius:21px;background:var(--paper);font:600 15px var(--font);cursor:pointer}
-.chip[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+.chip{color:var(--ink-2);border-color:var(--rule)}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chip::before{content:'';display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:-2px;border:1.5px solid currentColor;border-radius:3px;box-sizing:border-box}
+.chip[aria-pressed=true]::before{content:'✓';font-size:12px;line-height:11px;text-align:center;background:var(--paper);color:var(--ink);border-color:var(--paper)}
 .lbl{font-size:13px;color:var(--ink-2);letter-spacing:.02em;font-weight:600}
 .setup,.quiz,.learn{display:flex;flex-direction:column;gap:12px}
 .tiles{display:grid;gap:8px}
@@ -271,10 +274,10 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
       <div id="info" hidden><h2 id="iName"></h2><div class="sub" id="iSub"></div><div class="entries"><div class="entry"><span>Cantone</span><b id="iK"></b></div><div class="entry"><span>Distretto</span><b id="iD"></b></div><div class="entry"><span>N. UST</span><b id="iN"></b></div></div><div class="note" id="iC"></div></div>
       <div id="chipsWrap" hidden><div class="lbl">Cosa vedere sulla carta</div>
         <div class="chips" id="chips">
-          <button class="chip" type="button" data-l="com" aria-pressed="true">Comuni</button>
+          <button class="chip" type="button" data-l="com" aria-pressed="false">Comuni</button>
           <button class="chip" type="button" data-l="dist" aria-pressed="false">Distretti</button>
           <button class="chip" type="button" data-l="cant" aria-pressed="true">Cantoni</button>
-          <button class="chip" type="button" data-l="nomi" aria-pressed="true">Nomi</button>
+          <button class="chip" type="button" data-l="nomi" aria-pressed="false">Nomi</button>
         </div></div>
       <div class="setup" id="setup" hidden>
         <div id="catWrap" hidden><div class="lbl">Cosa</div><div class="chips" id="catChips"></div></div>
@@ -1337,7 +1340,7 @@ const MAPS={
 const KN={ZH:'Zurigo',BE:'Berna',LU:'Lucerna',UR:'Uri',SZ:'Svitto',OW:'Obvaldo',NW:'Nidvaldo',GL:'Glarona',ZG:'Zugo',FR:'Friburgo',SO:'Soletta',BS:'Basilea Città',BL:'Basilea Campagna',SH:'Sciaffusa',AR:'Appenzello Esterno',AI:'Appenzello Interno',SG:'San Gallo',GR:'Grigioni',AG:'Argovia',TG:'Turgovia',TI:'Ticino',VD:'Vaud',VS:'Vallese',NE:'Neuchâtel',GE:'Ginevra',JU:'Giura'};
 const GEO={cx:[1759.323222832368,895.8339284145278,0.016159342528644233],cy:[1252.2332498214953,0.0190945177211006,-897.0730979843017],E0:2660000,N0:1185000,div:100000};
 const $=id=>document.getElementById(id);
-const S={cv:null,ready:false,H:null,Hi:null,frame:null,sel:null,layers:{com:1,dist:0,cant:1,nomi:1},mod:'esplora',mode:'impara',cats:{c:1,v:0,p:0,l:0},ans:'scegli',qz:null,hl:null,marks:[],learnPois:null,stream:null,busy:false,live:false,raw:document.createElement('canvas'),prevGray:null,lastT:0,lastRec:0,facing:'environment',pinM:null,devId:null,devs:[]};
+const S={cv:null,ready:false,H:null,Hi:null,frame:null,sel:null,layers:{com:0,dist:0,cant:1,nomi:0},mod:'esplora',mode:'impara',cats:{c:1,v:0,p:0,l:0},ans:'scegli',qz:null,hl:null,marks:[],learnPois:null,stream:null,busy:false,live:false,raw:document.createElement('canvas'),prevGray:null,lastT:0,lastRec:0,facing:'environment',pinM:null,devId:null,devs:[]};
 
 /* ---------- dati ---------- */
 const DB=JSON.parse($('chdata').textContent);
@@ -1547,7 +1550,7 @@ function draw(){
   };
   if(L.com)line(DB.com,1.1,'rgba(255,255,255,.9)');
   if(L.dist)line(DB.dist,2.2,'#F2B705');
-  if(L.cant)line(DB.cant,3.4,'#D52B1E');
+  if(L.cant)line(DB.cant,2,'#D52B1E');
   if(S.sel){ctx.beginPath();polyPath(ctx,S.sel.r,H);ctx.fillStyle='rgba(213,43,30,.28)';ctx.fill('evenodd');ctx.strokeStyle='#D52B1E';ctx.lineWidth=3.2*k;ctx.stroke()}
   if(L.nomi){
     if(clipped){ctx.restore();clipped=false}
