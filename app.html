@@ -1624,7 +1624,7 @@ function draw(){
     }
   }
   if(!clipped)clipped=doClip();
-  if(S.mod!=='esplora')drawModule(ctx,H,W,Hh,k);
+  if(S.mod!=='esplora')drawModule(ctx,H,W,Hh,k);else fiDraw(ctx,H,W,Hh,k);
   drawSketch(ctx,H,k);
   if(S.pinM&&(WEPS>0?1:-1)*wOf(H,S.pinM[0],S.pinM[1])>Math.abs(WEPS)){const[x,y]=applyH(H,S.pinM[0],S.pinM[1]),r=9*k;ctx.beginPath();ctx.moveTo(x-r,y);ctx.lineTo(x+r,y);ctx.moveTo(x,y-r);ctx.lineTo(x,y+r);ctx.strokeStyle='rgba(0,0,0,.75)';ctx.lineWidth=3.6*k;ctx.stroke();ctx.strokeStyle='#fff';ctx.lineWidth=1.6*k;ctx.stroke()}
   if(clipped)ctx.restore();
@@ -2528,7 +2528,7 @@ function fiDraw(ctx,H,W,Hh,k){
   if(!lines&&!(inFi&&S.hl&&S.hl.fi!=null))return;
   ctx.lineCap='round';ctx.lineJoin='round';
   if(lines)DB.riv.forEach((c,j)=>{if((inFi&&!fiAct(c))||!visible(c.b,H,W,Hh))return;const big=['Ticino','Reno','Rodano','Aare','Inn'].includes(c.n)&&ch;
-    ctx.beginPath();polyPath(ctx,c.r,H);const cw=(big||(!ch&&j===0))?2.4:1.7;ctx.strokeStyle='#2F7DB8';ctx.lineWidth=(cw+1.1)*k;ctx.stroke();ctx.strokeStyle='#8FD3F4';ctx.lineWidth=cw*k;ctx.stroke()});
+    ctx.beginPath();polyPath(ctx,c.r,H);const cw=(big||(!ch&&j===0))?1.3:0.9;ctx.strokeStyle='#2F7DB8';ctx.lineWidth=(cw+0.7)*k;ctx.stroke();ctx.strokeStyle='#8FD3F4';ctx.lineWidth=cw*k;ctx.stroke()});
   const hl=S.hl;if(inFi&&hl&&hl.fi!=null){const c=DB.riv[hl.fi];ctx.beginPath();polyPath(ctx,c.r,H);ctx.strokeStyle='rgba(0,0,0,.75)';ctx.lineWidth=7*k;ctx.stroke();ctx.strokeStyle=hl.line||'#E0A21B';ctx.lineWidth=4.2*k;ctx.stroke()}
   ctx.lineCap='butt';
   const names=lines&&(!inFi||(S.mode==='impara'&&!quiz));
