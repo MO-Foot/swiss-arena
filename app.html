@@ -232,9 +232,9 @@ select.sel{height:46px;border:1.5px solid var(--ink);border-radius:4px;font:600 
 
 /* ---- colonna sinistra: Livelli (sempre) + finestra del modulo ---- */
 #leftcol{display:contents}
-body:not(.d-phone.port) #leftcol{display:flex;flex-direction:column;gap:8px;position:absolute;z-index:5;left:12px;top:calc(var(--safet) + 62px);bottom:calc(var(--safeb) + var(--dockH) + 24px);width:min(360px,calc(100% - 24px));pointer-events:none}
+body:not(.d-phone.port) #leftcol{display:flex;flex-direction:column;gap:8px;position:absolute;z-index:5;left:12px;top:calc(var(--safet) + 62px);bottom:calc(var(--safeb) + var(--dockH) + 24px);width:min(300px,calc(100% - 24px));pointer-events:none}
 body:not(.d-phone.port) #leftcol>*{pointer-events:auto}
-body:not(.d-phone.port) #app #leftcol>#chipsWrap{position:static;left:auto;top:auto;width:282px;max-width:100%;flex:none}
+body:not(.d-phone.port) #app #leftcol>#chipsWrap{position:static;left:auto;top:auto;width:100%;max-width:100%;flex:none;box-sizing:border-box}
 body:not(.d-phone.port) #app #leftcol>#chipsWrap[hidden]{display:none}
 body:not(.d-phone.port) #chipsWrap .chips{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 body:not(.d-phone.port) #chipsWrap .chip{height:34px;font-size:12.5px;padding:0 8px;white-space:nowrap}
