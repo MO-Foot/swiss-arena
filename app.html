@@ -276,17 +276,18 @@ body:not(.d-phone.port) #app #leftcol>#panel[hidden]{display:none}
 .d-phone #app .hint{left:112px;max-width:calc(100% - 180px);font-size:13px;padding:5px 8px}
 
 /* ---- gancetto: nasconde/mostra tutta la colonna sinistra ---- */
-body{--lx:12px;--lcw:300px}
-body.d-phone{--lx:8px}
-body.d-phone.port{--lcw:164px}
-#lhook{position:absolute;z-index:8;left:0;top:50%;transform:translateY(-50%);width:26px;height:68px;padding:0;border:2px solid #fff;border-left:0;border-radius:0 12px 12px 0;background:rgba(34,42,46,.92);color:#fff;font:700 20px var(--font);box-shadow:0 1px 5px rgba(0,0,0,.5);cursor:pointer;display:flex;align-items:center;justify-content:center}
+body{--lx:12px;--lcw:min(300px,calc(100vw - 24px));--ltop:62px}
+body.d-phone{--lx:8px;--ltop:52px}
+body.d-phone.port{--lcw:min(164px,calc(100vw - 16px))}
+#lhook{position:absolute;z-index:8;left:0;top:calc(var(--safet) + var(--ltop));width:26px;height:46px;padding:0;border:2px solid #fff;border-left:0;border-radius:0 12px 12px 0;background:rgba(34,42,46,.92);color:#fff;font:700 20px var(--font);box-shadow:0 1px 5px rgba(0,0,0,.5);cursor:pointer;display:flex;align-items:center;justify-content:center}
 #lhook[hidden]{display:none}
-body.port #lhook{top:calc(var(--safet) + 60px);transform:none}
 body:not(.lhide) #lhook{left:calc(var(--lx) + var(--lcw))}
 body.lhide #bMenu,body.lhide #menu,body.lhide #chipsWrap{display:none!important}
 body.lhide:not(.d-phone.port) #leftcol{display:none}
 /* zoom: nell'angolo in alto a destra */
-#app #zoomCtl{top:calc(var(--safet) + 6px)!important;right:8px!important}
+#app #zoomCtl{top:calc(var(--safet) + var(--ltop))!important;right:8px!important}
+#app #menu{left:var(--lx)!important;right:auto!important;top:calc(var(--safet) + var(--ltop))!important;width:var(--lcw)!important;box-sizing:border-box}
+body.d-phone.port #app #menu{width:min(260px,calc(100vw - 16px))!important}
 body:has(#zoomCtl:not([hidden])) .top{padding-right:64px}
 /* Livelli subito sotto il Menu */
 .d-phone.port #chipsWrap{top:calc(var(--safet) + 52px)!important}
