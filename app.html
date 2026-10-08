@@ -285,13 +285,21 @@ body:not(.lhide) #lhook{left:calc(var(--lx) + var(--lcw))}
 body.lhide #bMenu,body.lhide #menu,body.lhide #chipsWrap{display:none!important}
 body.lhide:not(.d-phone.port) #leftcol{display:none}
 /* zoom: nell'angolo in alto a destra */
-#app #zoomCtl{top:calc(var(--safet) + var(--ltop))!important;right:8px!important}
+#app #zoomCtl{top:calc(var(--safet) + 10px)!important;right:8px!important}
+body.d-phone #app #zoomCtl{top:calc(var(--safet) + 6px)!important}
+#app #bMenu{width:var(--lcw);flex:none;box-sizing:border-box}
 #app #menu{left:var(--lx)!important;right:auto!important;top:calc(var(--safet) + var(--ltop))!important;width:var(--lcw)!important;box-sizing:border-box}
 body.d-phone.port #app #menu{width:min(260px,calc(100vw - 16px))!important}
 body:has(#zoomCtl:not([hidden])) .top{padding-right:64px}
 /* Livelli subito sotto il Menu */
 .d-phone.port #chipsWrap{top:calc(var(--safet) + 52px)!important}
 body.d-phone:not(.port) #leftcol{top:calc(var(--safet) + 52px)}
+/* scala e crediti: il più in basso possibile, nell'angolo */
+#satAttr{bottom:calc(var(--safeb) + var(--dockH) + 14px)}
+#scaleBar{bottom:calc(var(--safeb) + var(--dockH) + 32px)}
+@media (min-width:1240px){#satAttr{bottom:calc(var(--safeb) + 8px)}#scaleBar{bottom:calc(var(--safeb) + 26px)}}
+.barOff #satAttr{left:116px;bottom:calc(var(--safeb) + 8px)}
+.barOff #scaleBar{left:122px;bottom:calc(var(--safeb) + 26px)}
 </style></head>
 <body>
 <div id="app">
