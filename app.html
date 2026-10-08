@@ -274,6 +274,23 @@ body:not(.d-phone.port) #app #leftcol>#panel[hidden]{display:none}
 .d-phone #chipsWrap{left:8px;top:calc(var(--safet) + 98px);width:164px}.d-phone #chipsWrap .chip{height:34px;font-size:14px}
 .fold{font-size:16px;line-height:1;min-width:40px;height:32px}
 .d-phone #app .hint{left:112px;max-width:calc(100% - 180px);font-size:13px;padding:5px 8px}
+
+/* ---- gancetto: nasconde/mostra tutta la colonna sinistra ---- */
+body{--lx:12px;--lcw:300px}
+body.d-phone{--lx:8px}
+body.d-phone.port{--lcw:164px}
+#lhook{position:absolute;z-index:8;left:0;top:50%;transform:translateY(-50%);width:26px;height:68px;padding:0;border:2px solid #fff;border-left:0;border-radius:0 12px 12px 0;background:rgba(34,42,46,.92);color:#fff;font:700 20px var(--font);box-shadow:0 1px 5px rgba(0,0,0,.5);cursor:pointer;display:flex;align-items:center;justify-content:center}
+#lhook[hidden]{display:none}
+body.port #lhook{top:calc(var(--safet) + 60px);transform:none}
+body:not(.lhide) #lhook{left:calc(var(--lx) + var(--lcw))}
+body.lhide #bMenu,body.lhide #menu,body.lhide #chipsWrap{display:none!important}
+body.lhide:not(.d-phone.port) #leftcol{display:none}
+/* zoom: nell'angolo in alto a destra */
+#app #zoomCtl{top:calc(var(--safet) + 6px)!important;right:8px!important}
+body:has(#zoomCtl:not([hidden])) .top{padding-right:64px}
+/* Livelli subito sotto il Menu */
+.d-phone.port #chipsWrap{top:calc(var(--safet) + 52px)!important}
+body.d-phone:not(.port) #leftcol{top:calc(var(--safet) + 52px)}
 </style></head>
 <body>
 <div id="app">
@@ -301,6 +318,7 @@ body:not(.d-phone.port) #app #leftcol>#panel[hidden]{display:none}
     <button class="big" id="bPm" type="button">Prima media (missioni)</button>
   </div>
 
+  <button id="lhook" type="button" aria-label="Mostra o nascondi le finestre" hidden>›</button>
   <div id="leftcol">
       <div id="chipsWrap" hidden><div class="lvlh"><b>Livelli</b><button class="fold" id="lvlTog" type="button" aria-label="Chiudi i livelli">▾</button></div>
         <div class="chips" id="chips">
@@ -1755,6 +1773,11 @@ $('view').addEventListener('click',e=>{
   S.pinM=m;S.sel=c;if(c)showInfo(c,m);else{const lk=findLake(m[0],m[1]);$('info').hidden=false;$('hint').hidden=true;$('iName').textContent=lk?lk.n:'Fuori dalla Svizzera';$('iSub').textContent=lk?'Lago':'Punto fuori dai confini nazionali';['iK','iD','iN'].forEach(i=>$(i).textContent='—');const l=toLV95(m[0],m[1]);$('iC').textContent='Coordinate LV95: '+fmtK(l[0])+' · '+fmtK(l[1])+' (km, approssimate)'}
   draw();
 });
+(function(){const b=document.body,h=document.getElementById('lhook');
+function set(hide,save){b.classList.toggle('lhide',hide);h.textContent=hide?'›':'‹';if(save){try{localStorage.setItem('sa_lhide',hide?'1':'0')}catch(e){}}}
+let st=null;try{st=localStorage.getItem('sa_lhide')}catch(e){}
+set(st==='1',false);
+h.addEventListener('click',()=>set(!b.classList.contains('lhide'),true));})();
 $('lvlTog').addEventListener('click',()=>{const f=$('chipsWrap').classList.toggle('folded');$('lvlTog').textContent=f?'▴':'▾';$('lvlTog').setAttribute('aria-label',f?'Apri i livelli':'Chiudi i livelli')});
 $('chips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b||b.disabled)return;const l=b.dataset.l;S.layers[l]=S.layers[l]?0:1;b.setAttribute('aria-pressed',!!S.layers[l]);draw()});
 
@@ -2897,7 +2920,7 @@ function refreshUI(){
   const vis=['info','setup','learn','quiz','comp'].some(id=>!$(id).hidden);
   $('panel').hidden=!vis||(!S.ready)||S.pm;
   $('cardTitle').textContent=!$('quiz').hidden?'Quiz':S.mod==='cantoni'?'Cantoni':S.mod==='luoghi'?'Luoghi':S.mod==='popolazione'?'Popolazione':S.mod==='competenze'?'Sfide':S.mod==='regioni'?'Regioni naturali':S.mod==='fiumi'?'Fiumi':'Esplora';
-  $('satAttr').hidden=!S.sat;if(!S.H)$('scaleBar').hidden=true;$('bRe').hidden=!S.live;$('zoomCtl').hidden=$('view').hidden||!S.frame;
+  $('satAttr').hidden=!S.sat;if(!S.H)$('scaleBar').hidden=true;$('bRe').hidden=!S.live;$('zoomCtl').hidden=$('view').hidden||!S.frame;$('lhook').hidden=$('zoomCtl').hidden;
   $('mCam').textContent=S.live?'Riavvia la fotocamera':'Avvia la fotocamera';
   const z=S.qz;if(z&&!z.over&&!z.answered&&!S.H&&z.qs[z.i].mode!=='foto'){$('qNote').textContent=NOLOCK;$('qNote').hidden=false}
   else if(z&&$('qNote').textContent===NOLOCK&&S.H){$('qNote').hidden=true}
