@@ -236,8 +236,8 @@ body:not(.d-phone.port) #leftcol{display:flex;flex-direction:column;gap:8px;posi
 body:not(.d-phone.port) #leftcol>*{pointer-events:auto}
 body:not(.d-phone.port) #app #leftcol>#chipsWrap{position:static;left:auto;top:auto;width:100%;max-width:100%;flex:none;box-sizing:border-box}
 body:not(.d-phone.port) #app #leftcol>#chipsWrap[hidden]{display:none}
-body:not(.d-phone.port) #chipsWrap .chips{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-body:not(.d-phone.port) #chipsWrap .chip{height:34px;font-size:12.5px;padding:0 8px;white-space:nowrap}
+body:not(.d-phone.port) #chipsWrap .chips{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
+body:not(.d-phone.port) #chipsWrap .chip{height:34px;font-size:12.5px;padding:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 #chips .chip:disabled{opacity:.4;cursor:not-allowed}
 body:not(.d-phone.port) #chipsWrap.folded .chips{display:none}
 body:not(.d-phone.port) #app #leftcol>#panel{position:static;left:auto;right:auto;top:auto;bottom:auto;transform:none;width:100%;max-height:none;flex:0 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-start}
@@ -300,6 +300,9 @@ body.d-phone:not(.port) #leftcol{top:calc(var(--safet) + 52px)}
 @media (min-width:1240px){#satAttr{bottom:calc(var(--safeb) + 8px)}#scaleBar{bottom:calc(var(--safeb) + 26px)}}
 .barOff #satAttr{left:116px;bottom:calc(var(--safeb) + 8px)}
 .barOff #scaleBar{left:122px;bottom:calc(var(--safeb) + 26px)}
+#chips .lg{grid-column:1/-1;font:700 11px var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin:4px 2px 0}
+#chips .lg:first-child{margin-top:0}
+#chipsWrap .chips{max-height:min(48vh,420px);overflow-y:auto;overflow-x:hidden;padding-right:2px;-webkit-overflow-scrolling:touch}
 </style></head>
 <body>
 <div id="app">
@@ -329,16 +332,26 @@ body.d-phone:not(.port) #leftcol{top:calc(var(--safet) + 52px)}
 
   <button id="lhook" type="button" aria-label="Mostra o nascondi le finestre" hidden>›</button>
   <div id="leftcol">
-      <div id="chipsWrap" hidden><div class="lvlh"><b>Livelli</b><button class="fold" id="lvlTog" type="button" aria-label="Chiudi i livelli">▾</button></div>
+      <div id="chipsWrap" hidden><div class="lvlh"><b>Livelli informativi</b><button class="fold" id="lvlTog" type="button" aria-label="Chiudi i livelli">▾</button></div>
         <div class="chips" id="chips">
+          <div class="lg">Confini</div>
           <button class="chip" type="button" data-l="naz" aria-pressed="false">Nazioni</button>
           <button class="chip" type="button" data-l="cant" aria-pressed="true">Cantoni</button>
           <button class="chip" type="button" data-l="dist" aria-pressed="false">Distretti</button>
           <button class="chip" type="button" data-l="com" aria-pressed="false">Comuni</button>
+          <button class="chip" type="button" data-l="reg" aria-pressed="false">Regioni</button>
+          <div class="lg">Nomi</div>
           <button class="chip" type="button" data-l="ncant" aria-pressed="false">Nomi cantoni</button>
           <button class="chip" type="button" data-l="nomi" aria-pressed="false">Nomi comuni</button>
           <button class="chip" type="button" data-l="ncity" aria-pressed="false">Nomi città</button>
+          <button class="chip" type="button" data-l="nfiumi" aria-pressed="false">Nomi fiumi</button>
+          <div class="lg">Elementi</div>
           <button class="chip" type="button" data-l="fiumi" aria-pressed="false">Fiumi</button>
+          <button class="chip" type="button" data-l="laghi" aria-pressed="false">Laghi</button>
+          <button class="chip" type="button" data-l="cime" aria-pressed="false">Cime</button>
+          <button class="chip" type="button" data-l="passi" aria-pressed="false">Passi</button>
+          <button class="chip" type="button" data-l="citta" aria-pressed="false">Città</button>
+          <button class="chip" type="button" data-l="pop" aria-pressed="false">Popolazione</button>
         </div></div>
 
   <div class="panel" id="panel" hidden>
@@ -1410,7 +1423,7 @@ const MAPS={
 const KN={ZH:'Zurigo',BE:'Berna',LU:'Lucerna',UR:'Uri',SZ:'Svitto',OW:'Obvaldo',NW:'Nidvaldo',GL:'Glarona',ZG:'Zugo',FR:'Friburgo',SO:'Soletta',BS:'Basilea Città',BL:'Basilea Campagna',SH:'Sciaffusa',AR:'Appenzello Esterno',AI:'Appenzello Interno',SG:'San Gallo',GR:'Grigioni',AG:'Argovia',TG:'Turgovia',TI:'Ticino',VD:'Vaud',VS:'Vallese',NE:'Neuchâtel',GE:'Ginevra',JU:'Giura'};
 const GEO={cx:[1759.323222832368,895.8339284145278,0.016159342528644233],cy:[1252.2332498214953,0.0190945177211006,-897.0730979843017],E0:2660000,N0:1185000,div:100000};
 const $=id=>document.getElementById(id);
-const S={cv:null,ready:false,H:null,Hi:null,frame:null,sel:null,layers:{naz:0,cant:1,dist:0,com:0,ncant:0,nomi:0,ncity:0,fiumi:0},mod:'esplora',mode:'impara',cats:{c:1,v:0,p:0,l:0},ans:'scegli',qz:null,hl:null,marks:[],learnPois:null,stream:null,busy:false,live:false,raw:document.createElement('canvas'),prevGray:null,lastT:0,lastRec:0,facing:'environment',pinM:null,devId:null,devs:[]};
+const S={cv:null,ready:false,H:null,Hi:null,frame:null,sel:null,layers:{naz:0,cant:1,dist:0,com:0,reg:0,ncant:0,nomi:0,ncity:0,nfiumi:0,fiumi:0,laghi:0,cime:0,passi:0,citta:0,pop:0},mod:'esplora',mode:'impara',cats:{c:1,v:0,p:0,l:0},ans:'scegli',qz:null,hl:null,marks:[],learnPois:null,stream:null,busy:false,live:false,raw:document.createElement('canvas'),prevGray:null,lastT:0,lastRec:0,facing:'environment',pinM:null,devId:null,devs:[]};
 
 /* ---------- dati ---------- */
 const DB=JSON.parse($('chdata').textContent);
@@ -1613,9 +1626,9 @@ function draw(){
   let clipped=false;
   const doClip=()=>{if(S.map&&S.map.clipD){const cc=S.map.clipD,sg=WEPS>0?1:-1;if(cc.every(p=>sg*wOf(H,p[0],p[1])>Math.abs(WEPS))){ctx.save();ctx.beginPath();cc.forEach((p,i)=>{const q=applyH(H,p[0],p[1]);if(i)ctx.lineTo(q[0],q[1]);else ctx.moveTo(q[0],q[1])});ctx.closePath();ctx.clip();return true}}return false};
   clipped=doClip();
-  if(S.mod==='popolazione')popFill(ctx,H,W,Hh,k);
+  if(L.pop)popFill(ctx,H,W,Hh,k);
   if(S.mod==='competenze')compFill(ctx,H,W,Hh,k);
-  if(S.mod==='regioni'&&S.mode==='impara')regFill(ctx,H,W,Hh,k);
+  if(L.reg)regFill(ctx,H,W,Hh,k);
   if(S.pm&&S.pmAR&&S.pmF)pmDrawAR(ctx,H,W,Hh,k);
   const line=(list,cw,col,dash)=>{
     ctx.beginPath();for(const c of list){if(c.b&&!visible(c.b,H,W,Hh))continue;if(c.b&&cw<1.5&&Math.max(c.b[2]-c.b[0],c.b[3]-c.b[1])*sc<5)continue;polyPath(ctx,c.r,H)}
@@ -1652,6 +1665,7 @@ function draw(){
   }
   if(!clipped)clipped=doClip();
   if(S.mod!=='esplora')drawModule(ctx,H,W,Hh,k);else fiDraw(ctx,H,W,Hh,k);
+  drawPois(ctx,H,W,Hh,k,L);
   drawSketch(ctx,H,k);
   if(S.pinM&&(WEPS>0?1:-1)*wOf(H,S.pinM[0],S.pinM[1])>Math.abs(WEPS)){const[x,y]=applyH(H,S.pinM[0],S.pinM[1]),r=9*k;ctx.beginPath();ctx.moveTo(x-r,y);ctx.lineTo(x+r,y);ctx.moveTo(x,y-r);ctx.lineTo(x,y+r);ctx.strokeStyle='rgba(0,0,0,.75)';ctx.lineWidth=3.6*k;ctx.stroke();ctx.strokeStyle='#fff';ctx.lineWidth=1.6*k;ctx.stroke()}
   if(clipped)ctx.restore();
@@ -1998,11 +2012,14 @@ function cityList(){if(CITIES&&CITIES_ID===S.mapId)return CITIES;const set=new S
   for(const c of DB.com){const h=c.h||0;if(h>=25000||(kd&&DB.K[c.k]===kd&&h>=10000))set.add(c)}
   for(const p of DB.poiAll)if(p.cap){const c=findCom(p.x,p.y);if(c)set.add(c)}
   CITIES=[...set].sort((a,b)=>(b.h||0)-(a.h||0));CITIES_ID=S.mapId;return CITIES}
-function eff(){const L=Object.assign({},S.layers);if(S.qz&&!S.qz.over){L.nomi=0;L.ncant=0;L.ncity=0}return L}
-function syncChips(){const qz=!!(S.qz&&!S.qz.over);[...$('chips').children].forEach(b=>{const l=b.dataset.l;b.setAttribute('aria-pressed',!!S.layers[l]);const nm=l==='nomi'||l==='ncant'||l==='ncity';b.disabled=qz&&nm;b.title=qz&&nm?'Spenti durante il quiz':''})}
+const QZOFF=['nomi','ncant','ncity','nfiumi','laghi','cime','passi','citta','pop','reg'];
+function eff(){const L=Object.assign({},S.layers);if(S.qz&&!S.qz.over){for(const l of QZOFF)L[l]=0}return L}
+function syncChips(){const qz=!!(S.qz&&!S.qz.over);[...$('chips').children].forEach(b=>{const l=b.dataset.l;if(!l)return;b.setAttribute('aria-pressed',!!S.layers[l]);const nm=QZOFF.includes(l);b.disabled=qz&&nm;b.title=qz&&nm?'Spenti durante il quiz':''})}
 function applyLayers(o){for(const l in o)S.layers[l]=o[l]?1:0;syncChips()}
-const LAYPRE={cantoni:{cant:1,dist:0,com:0,nomi:0,ncant:0,ncity:0,naz:0,fiumi:0},fiumi:{cant:1,dist:0,com:0,nomi:0,ncant:0,ncity:0,naz:0,fiumi:1}};LAYPRE.luoghi=LAYPRE.regioni=LAYPRE.popolazione=LAYPRE.cantoni;
-function modLayers(m){const p=LAYPRE[m];if(!p)return;const o={};for(const l in p)o[l]=(l==='fiumi'&&m==='fiumi')?1:(T.lay[l]===0?0:p[l]);applyLayers(o)}
+const LAY0={naz:0,cant:1,dist:0,com:0,reg:0,ncant:0,nomi:0,ncity:0,nfiumi:0,fiumi:0,laghi:0,cime:0,passi:0,citta:0,pop:0};
+const LAYPRE={cantoni:LAY0,fiumi:Object.assign({},LAY0,{fiumi:1,nfiumi:1}),regioni:Object.assign({},LAY0,{reg:1}),popolazione:LAY0};LAYPRE.luoghi=LAY0;
+function lugLayers(){applyLayers({citta:S.cats.c,cime:S.cats.v,passi:S.cats.p,laghi:S.cats.l})}
+function modLayers(m){const p=LAYPRE[m];if(!p)return;const o={};for(const l in p)o[l]=(T.lay[l]===0?0:p[l]);applyLayers(o)}
 
 /* elenchi di elementi */
 function itemsFor(){
@@ -2023,6 +2040,22 @@ function drawTag(ctx,x,y,text,k,col,dx){
   ctx.lineWidth=4*k;ctx.strokeStyle='rgba(0,0,0,.85)';ctx.strokeText(text,x+(dx||0),y);ctx.fillStyle=col||'#fff';ctx.fillText(text,x+(dx||0),y);
 }
 function lakeLabelPos(l){if(l.lp)return l.lp;let best=null,bd=1e9;const cx=(l.b[0]+l.b[2])/2,cy=(l.b[1]+l.b[3])/2;for(const r of l.r)for(let i=0;i<r.length;i+=2){const d=Math.hypot(r[i]-cx,r[i+1]-cy);if(d<bd){bd=d;best=[r[i],r[i+1]]}}return l.lp=best}
+/* punti dei luoghi (città, cime, passi, laghi) come livelli */
+function drawPois(ctx,H,W,Hh,k,L){
+  const list=DB.poi.filter(p=>p.t==='c'?L.citta:p.t==='v'?L.cime:p.t==='p'?L.passi:p.t==='l'?L.laghi:0);
+  if(!list.length)return;
+  const placed=[];ctx.font=`600 ${13*k}px Signika,sans-serif`;
+  for(const p of list){
+    let mx,my,name=p.n;if(p.t==='l'){const l=DB.lake[p.li];if(!visible(l.b,H,W,Hh))continue;[mx,my]=lakeLabelPos(l)}else{mx=p.x;my=p.y}
+    const q=proj(H,mx,my);if(!q||q[0]<0||q[1]<0||q[0]>W||q[1]>Hh)continue;
+    const short=name.replace(/\s*\(.*\)/,'');const tw=ctx.measureText(short).width;
+    const r=[q[0]-5*k,q[1]-9*k,q[0]+tw+14*k,q[1]+9*k];let hit=false;for(const o of placed){if(r[0]<o[2]&&r[2]>o[0]&&r[1]<o[3]&&r[3]>o[1]){hit=true;break}}
+    if(hit)continue;placed.push(r);
+    ctx.fillStyle=p.t==='v'?'#fff':p.t==='p'?'#E0A21B':p.t==='l'?'#0A7FC2':'#D52B1E';ctx.strokeStyle='#000';ctx.lineWidth=2*k;ctx.beginPath();
+    if(p.t==='v'){ctx.moveTo(q[0],q[1]-6*k);ctx.lineTo(q[0]+6*k,q[1]+5*k);ctx.lineTo(q[0]-6*k,q[1]+5*k);ctx.closePath()}else ctx.arc(q[0],q[1],5*k,0,7);
+    ctx.fill();ctx.stroke();drawTag(ctx,q[0],q[1],short,k,'#fff',9*k);
+  }
+}
 function fillRings(ctx,rs,H,col,line){ctx.beginPath();polyPath(ctx,rs,H);ctx.fillStyle=col;ctx.fill('evenodd');if(line){ctx.strokeStyle=line.c;ctx.lineWidth=line.w;ctx.stroke()}}
 function drawModule(ctx,H,W,Hh,k){
   if(S.hl2&&S.hl2.k)fillRings(ctx,DB.cant[S.hl2.k-1].r,H,S.hl2.col,{c:S.hl2.line||S.hl2.col,w:3.6*k});
@@ -2034,20 +2067,6 @@ function drawModule(ctx,H,W,Hh,k){
     if(hl.rg!=null)fillRings(ctx,DB.reg[hl.rg].r,H,hl.col,{c:hl.line||hl.col,w:3.6*k});
   }
   fiDraw(ctx,H,W,Hh,k);
-  /* modo Impara dei luoghi: punti con nome */
-  if(S.learnPois){
-    const placed=[];ctx.font=`600 ${13*k}px Signika,sans-serif`;
-    for(const p of S.learnPois){
-      let mx,my,name=p.n;if(p.t==='l'){const l=DB.lake[p.li];if(!visible(l.b,H,W,Hh))continue;[mx,my]=lakeLabelPos(l)}else{mx=p.x;my=p.y}
-      const q=proj(H,mx,my);if(!q||q[0]<0||q[1]<0||q[0]>W||q[1]>Hh)continue;
-      const short=name.replace(/\s*\(.*\)/,'');const tw=ctx.measureText(short).width;
-      const r=[q[0]-5*k,q[1]-9*k,q[0]+tw+14*k,q[1]+9*k];let hit=false;for(const o of placed){if(r[0]<o[2]&&r[2]>o[0]&&r[1]<o[3]&&r[3]>o[1]){hit=true;break}}
-      if(hit)continue;placed.push(r);
-      ctx.fillStyle=p.t==='v'?'#fff':p.t==='p'?'#E0A21B':p.t==='l'?'#0A7FC2':'#D52B1E';ctx.strokeStyle='#000';ctx.lineWidth=2*k;ctx.beginPath();
-      if(p.t==='v'){ctx.moveTo(q[0],q[1]-6*k);ctx.lineTo(q[0]+6*k,q[1]+5*k);ctx.lineTo(q[0]-6*k,q[1]+5*k);ctx.closePath()}else ctx.arc(q[0],q[1],5*k,0,7);
-      ctx.fill();ctx.stroke();drawTag(ctx,q[0],q[1],short,k,'#fff',9*k);
-    }
-  }
   {const z=S.qz;let off=false;
     if(z&&!z.over&&!z.answered&&z.qs[z.i].mode!=='localizza'){const it=z.qs[z.i].it;let vis=false;
       if(it.t==='k'){const qq=z.qs[z.i];vis=visible(DB.cant[it.k-1].b,H,W,Hh)||(qq.b?visible(DB.cant[qq.b-1].b,H,W,Hh):false)}else if(it.t==='l')vis=visible(it.lake.b,H,W,Hh);else if(it.t==='r'||it.t==='f'||it.t==='q')vis=true;
@@ -2080,10 +2099,9 @@ function renderSetup(){
   if(m==='esplora')return;
   $('modeChips').innerHTML=TILES[m].filter(([v])=>(m!=='fiumi'||(S.fiScope==='ch'?v!=='valli':v!=='bacini'))&&(!T.acts[m]||T.acts[m][v]!==0)&&!(S.map&&S.map.tilesOff&&(S.map.tilesOff[m]||[]).includes(v))).map(([v,t,d])=>`<button class="tile" type="button" data-mode="${v}" aria-pressed="${S.mode===v&&(v==='impara'||(m==='popolazione'&&/^(mappa|class)/.test(v)))}"><b>${t}</b><span>${d}</span></button>`).join('');
   $('catWrap').hidden=m!=='luoghi'&&m!=='fiumi';$('catWrap').firstChild.textContent=m==='fiumi'?'Fiumi di':'Cosa';$('lLegend').hidden=false;if(m==='fiumi'){if(!S.fiScope)S.fiScope=(S.map&&S.map.id==='ticino')?'ti':'ch';$('catChips').innerHTML=chipHTML([['ti','Ticino'],['ch','Svizzera']],v=>S.fiScope===v,'fsc')}else $('catChips').innerHTML=chipHTML(CATS.filter(([v])=>T.cats[v]),v=>!!S.cats[v],'cat');
-  if(S.mode==='impara'&&m==='luoghi')S.learnPois=DB.poi.filter(p=>S.cats[p.t]);else S.learnPois=null;
   if(S.H)draw();
 }
-$('mods').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.mod=b.dataset.m;S.mode=(S.mod==='popolazione'||S.mod==='competenze')?'':'impara';endSketch();resetModState();modLayers(S.mod);
+$('mods').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.mod=b.dataset.m;S.mode=(S.mod==='popolazione'||S.mod==='competenze')?'':'impara';endSketch();resetModState();modLayers(S.mod);if(S.mod==='luoghi')lugLayers();
   [...$('mods').children].forEach(x=>x.setAttribute('aria-pressed',x===b));
   $('hint').hidden=true;
   if(S.mod==='esplora'){$('hint').hidden=false;$('hint').textContent='Tocca un punto della carta per sapere che comune è.'}else if(S.mod==='popolazione'){S.mode=''}else if(S.mod==='competenze'){S.mode='';compHome()}else if(S.mod==='regioni'){regIntro()}else if(S.mod==='fiumi'){fiIntro()}
@@ -2094,11 +2112,11 @@ $('setup').addEventListener('click',e=>{
   const t=e.target.closest('.tile');
   if(t&&S.mod==='popolazione'){popStart(t.dataset.mode);return}
   if(t){S.mode=t.dataset.mode;resetModState();S.actOpen=false;
-    if(S.mode==='impara'){renderSetup();$('hint').hidden=false;$('hint').textContent=S.mod==='cantoni'?'Tocca un cantone sulla carta.':S.mod==='regioni'?'Tocca una regione sulla carta.':S.mod==='fiumi'?'Tocca un fiume o un lago sulla carta.':'Tocca un punto segnato sulla carta.';if(S.mod==='regioni')regIntro();if(S.mod==='fiumi')fiIntro();return}
+    if(S.mode==='impara'){if(S.mod==='luoghi')lugLayers();else if(S.mod==='regioni')applyLayers({reg:1});else if(S.mod==='fiumi')applyLayers({fiumi:1,nfiumi:1});renderSetup();$('hint').hidden=false;$('hint').textContent=S.mod==='cantoni'?'Tocca un cantone sulla carta.':S.mod==='regioni'?'Tocca una regione sulla carta.':S.mod==='fiumi'?'Tocca un fiume o un lago sulla carta.':'Tocca un punto segnato sulla carta.';if(S.mod==='regioni')regIntro();if(S.mod==='fiumi')fiIntro();return}
     startQuiz();return}
   const b=e.target.closest('.chip');if(!b)return;
   if(b.dataset.fsc){S.fiScope=b.dataset.fsc;S.hl=null;S.marks=[];renderSetup();if(S.mode==='impara')fiIntro();draw();return}
-  if(b.dataset.cat){const c=b.dataset.cat;S.cats[c]=S.cats[c]?0:1;if(!Object.values(S.cats).some(Boolean))S.cats[c]=1;if(S.mode==='impara'){S.modeKeep=1}renderSetup()}
+  if(b.dataset.cat){const c=b.dataset.cat;S.cats[c]=S.cats[c]?0:1;if(!Object.values(S.cats).some(Boolean))S.cats[c]=1;if(S.mode==='impara'){S.modeKeep=1;if(S.mod==='luoghi')lugLayers()}renderSetup()}
 });
 document.addEventListener('click',e=>{const b=e.target.closest('.chip[data-ans]');if(b){S.ans=b.dataset.ans;renderSetup()}});
 
@@ -2272,7 +2290,7 @@ function klass(v,br){let i=0;while(i<br.length&&v>=br[i])i++;return i}
 function bandLabel(i,br){if(i===0)return 'meno di '+fmtN(br[0]);if(i===br.length)return 'oltre '+fmtN(br[br.length-1]);return fmtN(br[i-1])+' – '+fmtN(br[i])}
 function legendHTML(lv){const br=BR[lv];return '<div class="lbl" style="margin-top:6px">Abitanti</div><div class="legend">'+PCOL.map((c,i)=>'<div><i style="background:'+c+'"></i>'+bandLabel(i,br)+'</div>').join('')+'</div><div class="note" style="margin-top:6px">Fonte: UST, popolazione residente permanente, anno '+DB.pop.y+'. Confini comunali 2026 (Moutier conteggiato nel Giura).</div>'}
 function popFill(ctx,H,W,Hh,k){
-  const lv=S.popMap;if(!lv)return;const list=lv==='c'?DB.cant:DB.dist,br=BR[lv];
+  const lv=S.popMap||'c';const list=lv==='c'?DB.cant:DB.dist,br=BR[lv];
   const kdi=(lv==='d'&&S.map&&S.map.kd)?DB.K.indexOf(S.map.kd):-1;
   for(const o of list){if(!o.h)continue;if(kdi>0&&o.k!==kdi)continue;if(o.b&&!visible(o.b,H,W,Hh))continue;ctx.beginPath();polyPath(ctx,o.r,H);ctx.fillStyle=PCOL[klass(o.h,br)]+'99';ctx.fill('evenodd')}
   if(lv==='c'){ctx.font='700 '+(13*k)+'px Signika,sans-serif';
@@ -2300,7 +2318,7 @@ function popInfo(m){
 function popStart(mode){
   resetModState();S.mode=mode;S.learnPois=null;
   if(mode==='mappa_c'||mode==='mappa_d'){
-    S.popMap=mode==='mappa_c'?'c':'d';applyLayers({dist:S.popMap==='d'?1:0,cant:1,com:0});$('learn').hidden=false;$('rankBox').hidden=true;$('lBack').hidden=false;
+    S.popMap=mode==='mappa_c'?'c':'d';applyLayers({dist:S.popMap==='d'?1:0,cant:1,com:0,pop:1});$('learn').hidden=false;$('rankBox').hidden=true;$('lBack').hidden=false;
     $('lName').textContent=S.popMap==='c'?'Popolazione dei cantoni':'Popolazione dei distretti';$('lSub').textContent='Più scuro = più abitanti';
     $('lNote').textContent='Tocca la carta per leggere il numero di abitanti.';$('lLegend').innerHTML=legendHTML(S.popMap);
     $('hint').hidden=true;
@@ -2426,7 +2444,7 @@ function compLaunch(id){
   if(id==='pop'||id==='tem'){compTabTo('popolazione');popStart('mappa_c');return}
   if(id==='popd'){compTabTo('popolazione');popStart('mappa_d');return}
   const cat={idro:'l',trans:'p',citta:'c',cime:'v'}[id];
-  if(cat){compTabTo('luoghi');for(const k in S.cats)S.cats[k]=k===cat?1:0;S.mode='impara';renderSetup();$('hint').hidden=false;$('hint').textContent='Tocca un punto segnato sulla carta.';return}
+  if(cat){compTabTo('luoghi');for(const k in S.cats)S.cats[k]=k===cat?1:0;S.mode='impara';lugLayers();renderSetup();$('hint').hidden=false;$('hint').textContent='Tocca un punto segnato sulla carta.';return}
   if(id==='schizzo'){startSketch();return}
 }
 function compInfo(t,sub,leg){
@@ -2563,7 +2581,7 @@ function fiDraw(ctx,H,W,Hh,k){
     ctx.beginPath();polyPath(ctx,c.r,H);const cw=(big||(!ch&&j===0))?1.3:0.9;ctx.strokeStyle='#2F7DB8';ctx.lineWidth=(cw+0.7)*k;ctx.stroke();ctx.strokeStyle='#8FD3F4';ctx.lineWidth=cw*k;ctx.stroke()});
   const hl=S.hl;if(inFi&&hl&&hl.fi!=null){const c=DB.riv[hl.fi];ctx.beginPath();polyPath(ctx,c.r,H);ctx.strokeStyle='rgba(0,0,0,.75)';ctx.lineWidth=7*k;ctx.stroke();ctx.strokeStyle=hl.line||'#E0A21B';ctx.lineWidth=4.2*k;ctx.stroke()}
   ctx.lineCap='butt';
-  const names=lines&&(!inFi||(S.mode==='impara'&&!quiz));
+  const names=!!L.nfiumi&&!!lines;
   if(names){
     const placed=[];ctx.font=`700 ${12.5*k}px Signika,sans-serif`;
     DB.riv.forEach((c,j)=>{if((inFi&&!fiAct(c))||!visible(c.b,H,W,Hh))return;const n=c.pts.length/2,m=Math.floor(n/2);const q=proj(H,c.pts[2*m],c.pts[2*m+1]);if(!q||q[0]<0||q[1]<0||q[0]>W||q[1]>Hh)return;
@@ -2782,7 +2800,7 @@ $('pmGo').addEventListener('click',()=>{pmReadTeacher();$('menu').hidden=true;pm
 const ACT_LIST={cantoni:[['impara','Impara'],['localizza','Dove si trova?'],['nomina','Come si chiama?'],['capoluogo','Capoluogo']],luoghi:[['impara','Impara'],['localizza','Dove si trova?'],['nomina','Come si chiama?']],fiumi:[['impara','Impara'],['localizza','Dove si trova?'],['nomina','Come si chiama?'],['valli','Valli attraversate'],['bacini','Bacini e mari'],['laghi','I laghi'],['perche','Perché?']],regioni:[['impara','Impara'],['localizza','Dove si trova?'],['nomina','Come si chiama?'],['foto','Dalla foto alla regione']],popolazione:[['mappa_c','Mappa dei cantoni'],['mappa_d','Mappa dei distretti'],['classifica','Classifica'],['piu','Chi ha più abitanti?'],['stima','Quanti abitanti?']]};
 const MOD_NAMES={esplora:'Esplora',cantoni:'Cantoni',luoghi:'Luoghi',popolazione:'Popolazione',competenze:'Sfide',regioni:'Regioni naturali',fiumi:'Fiumi'};
 const CAT_NAMES={c:'Città',v:'Cime',p:'Passi',l:'Laghi'};
-const LAY_NAMES={naz:'Nazioni',cant:'Cantoni',dist:'Distretti',com:'Comuni',ncant:'Nomi cantoni',nomi:'Nomi comuni',ncity:'Nomi città (principali)',fiumi:'Fiumi'};
+const LAY_NAMES={naz:'Nazioni',cant:'Cantoni',dist:'Distretti',com:'Comuni',ncant:'Nomi cantoni',nomi:'Nomi comuni',ncity:'Nomi città (principali)',nfiumi:'Nomi fiumi',reg:'Regioni naturali',fiumi:'Fiumi',laghi:'Laghi',cime:'Cime',passi:'Passi',citta:'Città',pop:'Popolazione'};
 function defCfg(){const a={};for(const m in ACT_LIST){a[m]={};ACT_LIST[m].forEach(x=>a[m][x[0]]=1)}return{mods:{esplora:1,cantoni:1,luoghi:1,popolazione:1,competenze:1,regioni:1,fiumi:1},acts:a,cats:{c:1,v:1,p:1,l:1},lay:{com:1,dist:1,cant:1,nomi:1},n:10,ans:'scegli',q:'',pm:{on:0,mod:'',proc:'',tema:'',dif:0,id:''},map:''}}
 let T=defCfg();S.teacher=false;
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
@@ -2805,9 +2823,9 @@ function applyCfg(){
   if(S.mod!=='pm'&&!T.mods[S.mod]){const f=enabledMods()[0]||'esplora';const b=[...$('mods').children].find(x=>x.dataset.m===f);if(b)b.click()}
   for(const c in T.cats){if(!T.cats[c])S.cats[c]=0}
   if(!Object.values(S.cats).some(Boolean)){const f=Object.keys(T.cats).find(c=>T.cats[c]);if(f)S.cats[f]=1}
-  for(const l of ['naz','ncant','ncity','fiumi'])if(T.lay[l]===undefined)T.lay[l]=1;
+  for(const l of Object.keys(LAY_NAMES))if(T.lay[l]===undefined)T.lay[l]=1;
   for(const l in T.lay){if(!T.lay[l])S.layers[l]=0}
-  [...$('chips').children].forEach(b=>{b.hidden=!T.lay[b.dataset.l];b.setAttribute('aria-pressed',!!S.layers[b.dataset.l])});
+  [...$('chips').children].forEach(b=>{if(!b.dataset.l)return;b.hidden=!T.lay[b.dataset.l];b.setAttribute('aria-pressed',!!S.layers[b.dataset.l])});
   if(!S.teacher){$('nSel').value=String(T.n);S.ans=T.ans}
   $('quizSet').hidden=$('nLbl').hidden=$('nSel').hidden=$('ansLbl').hidden=$('ansChips').hidden=!S.teacher;
   $('roleBadge').hidden=!S.teacher;
