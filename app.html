@@ -363,7 +363,7 @@ body.d-phone:not(.port) #leftcol{top:calc(var(--safet) + 52px)}
    <div class="card" id="card">
     <div class="cardtop"><b id="cardTitle">Esplora</b><button class="fold" id="bAct" type="button" hidden style="width:auto;padding:0 10px;margin-left:auto;margin-right:6px">☰ Attività</button><button class="fold" id="bFold" type="button" aria-label="Riduci il pannello">▾</button></div>
     <div class="cardbody">
-      <div id="info" hidden><h2 id="iName"></h2><div class="sub" id="iSub"></div><div class="entries"><div class="entry"><span>Cantone</span><b id="iK"></b></div><div class="entry"><span>Distretto</span><b id="iD"></b></div><div class="entry"><span>N. UST</span><b id="iN"></b></div></div><div class="note" id="iC"></div></div>
+      <div id="info" hidden><h2 id="iName"></h2><div class="sub" id="iSub"></div><div class="entries"><div class="entry"><span>Cantone</span><b id="iK"></b></div><div class="entry"><span>Abitanti</span><b id="iD"></b></div><div class="entry"><span>Superficie</span><b id="iN"></b></div></div><div class="note" id="iC"></div></div>
       <div class="setup" id="setup" hidden>
         <div id="catWrap" hidden><div class="lbl">Cosa</div><div class="chips" id="catChips"></div></div>
         <div class="lbl">Scegli un'attività</div><div class="tiles" id="modeChips"></div>
@@ -1447,6 +1447,7 @@ function findCom(x,y){for(const c of DB.com){const b=c.b;if(x<b[0]||x>b[2]||y<b[
 function findLake(x,y){for(const c of DB.lake){const b=c.b;if(x<b[0]||x>b[2]||y<b[1]||y>b[3])continue;let ins=false;for(const r of c.r)if(inRing(r,x,y))ins=!ins;if(ins)return c}return null}
 function findCant(x,y){for(const c of DB.cant){const b=c.b;if(x<b[0]||x>b[2]||y<b[1]||y>b[3])continue;let ins=false;for(const r of c.r)if(inRing(r,x,y))ins=!ins;if(ins)return c}return null}
 function segDist(r,x,y){let best=1e9;const n=r.length/2;for(let i=0,j=n-1;i<n;j=i++){const ax=r[2*j],ay=r[2*j+1],bx=r[2*i],by=r[2*i+1],dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy;let t=l?((x-ax)*dx+(y-ay)*dy)/l:0;t=Math.max(0,Math.min(1,t));const d=Math.hypot(x-(ax+t*dx),y-(ay+t*dy));if(d<best)best=d}return best}
+function ringKm2(rs){let a=0;for(const r of rs){let s=0;const n=r.length/2;for(let j=0;j<n;j++){const j2=(j+1)%n;s+=r[2*j]*r[2*j2+1]-r[2*j2]*r[2*j+1]}a+=s/2}const km=Math.abs(a)*0.1116*0.1116;return (km<10?km.toFixed(1):fmtN(Math.round(km)))+' km²'}
 function cantKm2(k){const c=DB.cant[k-1];if(c.km2)return c.km2;let a=0;for(const r of c.r){let s=0;const n=r.length/2;for(let j=0;j<n;j++){const j2=(j+1)%n;s+=r[2*j]*r[2*j2+1]-r[2*j2]*r[2*j+1]}a+=s/2}return c.km2=Math.round(Math.abs(a)*0.1116*0.1116)}
 function lakeHit(l,x,y,tol){const b=l.b;if(x<b[0]-tol||x>b[2]+tol||y<b[1]-tol||y>b[3]+tol)return false;let ins=false;for(const r of l.r)if(inRing(r,x,y))ins=!ins;if(ins)return true;for(const r of l.r)if(segDist(r,x,y)<=tol)return true;return false}
 function toLV95(x,y){const A=GEO.cx[1],B=GEO.cx[2],C=GEO.cy[1],D=GEO.cy[2];const px=x-GEO.cx[0],py=y-GEO.cy[0];const det=A*D-B*C;const u=(px*D-B*py)/det,v=(A*py-C*px)/det;return[GEO.E0+u*GEO.div,GEO.N0+v*GEO.div]}
@@ -1682,8 +1683,8 @@ function showInfo(c,pt){
   $('iName').textContent=c.n;
   const kn=KN[DB.K[c.k]]||DB.K[c.k];
   $('iSub').textContent=(c.d>=0?'Distretto di '+DB.D[c.d]+' · ':'')+'Canton '+kn;
-  $('iK').textContent=DB.K[c.k];$('iD').textContent=c.d>=0?DB.D[c.d]:'—';$('iN').textContent=c.i;
-  const l=toLV95(pt[0],pt[1]);$('iC').textContent="Abitanti: "+fmtN(c.h)+" (UST "+DB.pop.y+") · Coordinate LV95: "+fmtK(l[0])+" · "+fmtK(l[1])+" km (approssimate)";
+  $('iK').textContent=DB.K[c.k];$('iD').textContent=c.h?fmtN(c.h):'—';$('iN').textContent=ringKm2(c.r);
+  const l=toLV95(pt[0],pt[1]);$('iC').textContent="Abitanti: UST "+DB.pop.y+" · superficie approssimativa · Coordinate LV95: "+fmtK(l[0])+" · "+fmtK(l[1])+" km (approssimate)";
 }
 function enterLocked(res,frame){
   S.frame=frame;setH(res.H);S.sel=null;S.pinM=null;
