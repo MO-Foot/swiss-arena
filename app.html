@@ -1447,6 +1447,7 @@ function findCom(x,y){for(const c of DB.com){const b=c.b;if(x<b[0]||x>b[2]||y<b[
 function findLake(x,y){for(const c of DB.lake){const b=c.b;if(x<b[0]||x>b[2]||y<b[1]||y>b[3])continue;let ins=false;for(const r of c.r)if(inRing(r,x,y))ins=!ins;if(ins)return c}return null}
 function findCant(x,y){for(const c of DB.cant){const b=c.b;if(x<b[0]||x>b[2]||y<b[1]||y>b[3])continue;let ins=false;for(const r of c.r)if(inRing(r,x,y))ins=!ins;if(ins)return c}return null}
 function segDist(r,x,y){let best=1e9;const n=r.length/2;for(let i=0,j=n-1;i<n;j=i++){const ax=r[2*j],ay=r[2*j+1],bx=r[2*i],by=r[2*i+1],dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy;let t=l?((x-ax)*dx+(y-ay)*dy)/l:0;t=Math.max(0,Math.min(1,t));const d=Math.hypot(x-(ax+t*dx),y-(ay+t*dy));if(d<best)best=d}return best}
+function cantKm2(k){const c=DB.cant[k-1];if(c.km2)return c.km2;let a=0;for(const r of c.r){let s=0;const n=r.length/2;for(let j=0;j<n;j++){const j2=(j+1)%n;s+=r[2*j]*r[2*j2+1]-r[2*j2]*r[2*j+1]}a+=s/2}return c.km2=Math.round(Math.abs(a)*0.1116*0.1116)}
 function lakeHit(l,x,y,tol){const b=l.b;if(x<b[0]-tol||x>b[2]+tol||y<b[1]-tol||y>b[3]+tol)return false;let ins=false;for(const r of l.r)if(inRing(r,x,y))ins=!ins;if(ins)return true;for(const r of l.r)if(segDist(r,x,y)<=tol)return true;return false}
 function toLV95(x,y){const A=GEO.cx[1],B=GEO.cx[2],C=GEO.cy[1],D=GEO.cy[2];const px=x-GEO.cx[0],py=y-GEO.cy[0];const det=A*D-B*C;const u=(px*D-B*py)/det,v=(A*py-C*px)/det;return[GEO.E0+u*GEO.div,GEO.N0+v*GEO.div]}
 const fmtK=v=>{const s=Math.round(v/100)/10;return (s).toFixed(1).replace('.',"'")};
@@ -2128,7 +2129,7 @@ function renderSetup(){
   if(!S.teacher)$('ansChips').innerHTML=chipHTML([['scegli','Scegli tra 4 nomi'],['scrivi','Scrivi il nome']],v=>S.ans===v,'ans');
   if(m==='esplora')return;
   $('modeChips').innerHTML=TILES[m].filter(([v])=>(m!=='fiumi'||(S.fiScope==='ch'?v!=='valli':v!=='bacini'))&&(!T.acts[m]||T.acts[m][v]!==0)&&!(S.map&&S.map.tilesOff&&(S.map.tilesOff[m]||[]).includes(v))).map(([v,t,d])=>`<button class="tile" type="button" data-mode="${v}" aria-pressed="${S.mode===v&&(v==='impara'||(m==='popolazione'&&/^(mappa|class)/.test(v)))}"><b>${t}</b><span>${d}</span></button>`).join('');
-  $('catWrap').hidden=m!=='luoghi'&&m!=='fiumi';$('catWrap').firstChild.textContent=m==='fiumi'?'Fiumi di':'Cosa';$('lLegend').hidden=false;if(m==='cantoni'||m==='luoghi'||m==='esplora')$('lLegend').innerHTML='';if(m==='fiumi'){if(!S.fiScope)S.fiScope=(S.map&&S.map.id==='ticino')?'ti':'ch';$('catChips').innerHTML=chipHTML([['ti','Ticino'],['ch','Svizzera']],v=>S.fiScope===v,'fsc')}else $('catChips').innerHTML=chipHTML(CATS.filter(([v])=>T.cats[v]),v=>!!S.cats[v],'cat');
+  $('catWrap').hidden=m!=='luoghi'&&m!=='fiumi';$('catWrap').firstChild.textContent=m==='fiumi'?'Fiumi di':'Cosa';$('lLegend').hidden=false;if(m!=='popolazione')$('rankBox').hidden=true;if(m==='cantoni'||m==='luoghi'||m==='esplora')$('lLegend').innerHTML='';if(m==='fiumi'){if(!S.fiScope)S.fiScope=(S.map&&S.map.id==='ticino')?'ti':'ch';$('catChips').innerHTML=chipHTML([['ti','Ticino'],['ch','Svizzera']],v=>S.fiScope===v,'fsc')}else $('catChips').innerHTML=chipHTML(CATS.filter(([v])=>T.cats[v]),v=>!!S.cats[v],'cat');
   if(S.H)draw();
 }
 $('mods').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.mod=b.dataset.m;S.mode=(S.mod==='popolazione'||S.mod==='competenze')?'':'impara';endSketch();resetModState();modLayers(S.mod);if(S.mod==='luoghi')lugLayers();
@@ -2163,7 +2164,7 @@ function modTap(m){
   if(S.mod==='cantoni'){
     const c=findCant(m[0],m[1]);
     if(!c){$('lName').textContent='Fuori dai cantoni';$('lSub').textContent='';$('lNote').textContent='Tocca un punto dentro la Svizzera.'}
-    else{S.hl={k:DB.cant.indexOf(c)+1,col:'rgba(213,43,30,.28)'};const k=S.hl.k,cp=capOf(k);$('lName').textContent=cantName(k);$('lSub').textContent='Sigla '+DB.K[k]+(cp?' · capoluogo: '+cp.n:'');$('lNote').textContent=''}
+    else{S.hl={k:DB.cant.indexOf(c)+1,col:'rgba(213,43,30,.28)'};const k=S.hl.k,cp=capOf(k);$('lName').textContent=cantName(k);$('lSub').textContent='Sigla '+DB.K[k]+(cp?' · capoluogo: '+cp.n:'')+' · superficie: '+fmtN(cantKm2(k))+' km²';$('lNote').textContent=''}
   }else{
     let p=nearestPoi(m[0],m[1],54);
     const lk=DB.poi.filter(q=>q.t==='l'&&S.cats.l).find(q=>lakeHit(DB.lake[q.li],m[0],m[1],8));
