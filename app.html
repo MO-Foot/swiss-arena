@@ -2849,7 +2849,7 @@ function loadCfg(){
   if(!fromLink){const j=lsGet('swissarena.cfg');if(j){try{T=mergeCfg(JSON.parse(j))}catch(e){}}}
   S.lockedLink=fromLink&&!docHash;
 }
-const MOD_HIDE=['competenze'];
+const MOD_HIDE=['competenze','regioni'];
 function enabledMods(){return Object.keys(MOD_NAMES).filter(m=>!MOD_HIDE.includes(m)&&T.mods[m]&&mapAllows(m))}
 function applyCfg(){
   [...$('mods').children].forEach(b=>{b.hidden=MOD_HIDE.includes(b.dataset.m)||!(T.mods[b.dataset.m]&&mapAllows(b.dataset.m))});
