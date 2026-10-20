@@ -305,7 +305,6 @@ body.d-phone:not(.port) #leftcol{top:calc(var(--safet) + 52px)}
 #chipsWrap .chips{max-height:min(48vh,420px);overflow-y:auto;overflow-x:hidden;padding-right:2px;-webkit-overflow-scrolling:touch}
 #chips .lg .ar{display:inline-block;width:12px}#chips .lg .cnt{font-style:normal;margin-left:auto;background:var(--ink);color:var(--paper);border-radius:9px;padding:0 6px;font-size:10px}#chips .lg .cnt:empty{display:none}
 #chips.gc-c .g-c,#chips.gc-n .g-n,#chips.gc-e .g-e{display:none!important}
-#mods [data-m=competenze]{display:none!important}
 </style></head>
 <body>
 <div id="app">
@@ -2850,9 +2849,10 @@ function loadCfg(){
   if(!fromLink){const j=lsGet('swissarena.cfg');if(j){try{T=mergeCfg(JSON.parse(j))}catch(e){}}}
   S.lockedLink=fromLink&&!docHash;
 }
-function enabledMods(){return Object.keys(MOD_NAMES).filter(m=>T.mods[m]&&mapAllows(m))}
+const MOD_HIDE=['competenze'];
+function enabledMods(){return Object.keys(MOD_NAMES).filter(m=>!MOD_HIDE.includes(m)&&T.mods[m]&&mapAllows(m))}
 function applyCfg(){
-  [...$('mods').children].forEach(b=>{b.hidden=!(T.mods[b.dataset.m]&&mapAllows(b.dataset.m))});
+  [...$('mods').children].forEach(b=>{b.hidden=MOD_HIDE.includes(b.dataset.m)||!(T.mods[b.dataset.m]&&mapAllows(b.dataset.m))});
   $('mods').style.gridTemplateColumns='repeat('+Math.max(1,enabledMods().length)+',minmax(0,1fr))';$('mods').classList.toggle('n7',enabledMods().length>=7);
   $('mods').hidden=enabledMods().length<2&&!S.teacher;
   if(S.mod!=='pm'&&!T.mods[S.mod]){const f=enabledMods()[0]||'esplora';const b=[...$('mods').children].find(x=>x.dataset.m===f);if(b)b.click()}
